@@ -42,25 +42,28 @@ class RunningAverage:
 
 class Particle:
     """A class that represents a particle."""
-    def __init__(self, x: float, y: float, angle: float):
+    def __init__(self, x: float, y: float, angle: float, k_neighbours: list = None):
         self.x = x
         self.y = y
         self.angle = angle
+        self.k_neighbours = k_neighbours if k_neighbours is not None else []
 
 class VicsekModel:
     """A class that represents the Vicsek model."""
+    
     # Determines whether a radius or a fixed number of neighbors should be used for calculation.
     # Radius: Dynamic number of neighbors, fixed radius.
     # Fixed: Fixed number of neighbors, dynamic radius.
     modes = {"radius": 0, "fixed": 1}
     
-    def __init__(self, N: int, L: float, v: float, noise: float, r: float, mode: int = 0):
+    def __init__(self, N: int, L: float, v: float, noise: float, r: float, mode: int = modes["radius"], k_neighbours: int = 5):
         self.N = N
         self.L = L
         self.v = v
         self.noise = noise
         self.r = r
         self.mode = mode
+        self.k_neighbours = k_neighbours
         self.density = N / L**2
         self.particles = [Particle(np.random.uniform(0, L), np.random.uniform(0, L), np.random.uniform(0, 2*np.pi)) for _ in range(N)]
         self.num_cells = int(L / r)
@@ -82,24 +85,44 @@ class VicsekModel:
             cell_x = int(particle.x / self.r)
             cell_y = int(particle.y / self.r)
             neighbours = []
+            distances = []
             for dx in [-1, 0, 1]:
                 for dy in [-1, 0, 1]:
                     neighbour_cell_x = (cell_x + dx) % self.num_cells
                     neighbour_cell_y = (cell_y + dy) % self.num_cells
                     for j in self.cells[neighbour_cell_x][neighbour_cell_y]:
-                        if i != j and np.hypot((particle.x - self.particles[j].x) - self.L * round((particle.x - self.particles[j].x) / self.L), 
-                                               (particle.y - self.particles[j].y) - self.L * round((particle.y - self.particles[j].y) / self.L)) < self.r:
+                        
+                        distance = np.hypot((particle.x - self.particles[j].x) - self.L * round((particle.x - self.particles[j].x) / self.L), 
+                                            (particle.y - self.particles[j].y) - self.L * round((particle.y - self.particles[j].y) / self.L))
+                        if i != j:
                             neighbours.append(self.particles[j])
+                            distances.append(distance)
             if neighbours:  # check if the list is not empty
                 neighbours.append(particle)
+                distances.append(0)
+                # Sort the neighbours and distances based on distances
+                sorted_neighbours, sorted_distances = zip(*sorted(zip(neighbours, distances), key=lambda x: x[1]))
+                
+                # If there is only a fixed number of neighbors, cut the list down to the k nearest
+                if self.mode == 1:
+                    # Select the k nearest neighbours
+                    neighbours = list(sorted_neighbours[:self.k_neighbours + 1])
+                elif self.mode == 0:
+                    # Find the index of the first distance that is greater or equal to 1
+                    cut_off = next((index for index, value in enumerate(sorted_distances) if value >= 1), None)
+                    # If such an index is found, cut the list down to this index
+                    if cut_off is not None:
+                        neighbours = list(sorted_neighbours[:cut_off])
+                
                 avg_angle = np.arctan2(np.mean([np.sin(p.angle) for p in neighbours]), np.mean([np.cos(p.angle) for p in neighbours]))
             else:
                 avg_angle = particle.angle  # if no neighbours, keep the current direction
             new_angle = avg_angle + np.random.uniform(-self.noise/2, self.noise/2)
             new_x = (particle.x + self.v * np.cos(new_angle)) % self.L
             new_y = (particle.y + self.v * np.sin(new_angle)) % self.L
-            new_particles.append(Particle(new_x, new_y, new_angle))
+            new_particles.append(Particle(new_x, new_y, new_angle, neighbours))
         self.particles = new_particles
+
 
     def va(self) -> float:
         """Calculates the order parameter."""
@@ -119,6 +142,11 @@ def animate(i):
         first_particle = model.particles[0]
         circle = patches.Circle((first_particle.x, first_particle.y), radius=model.r, fill=False, color="blue")
         ax1.add_patch(circle)
+        
+        # Mark neighbours of first particle
+        for neighbour in first_particle.k_neighbours[1:]:
+            ax1.plot([first_particle.x, neighbour.x], [first_particle.y, neighbour.y], color='red')  # draw line to neighbour
+            # ax1.scatter(neighbour.x, neighbour.y, color='red')  # mark neighbour
     
     model.update()
 
@@ -145,21 +173,23 @@ if __name__ == "__main__":
     num_frames = 2000
 
     # Initialize Model
+    modes = {"radius": 0, "fixed": 1}
+    mode = modes["fixed"]
+    
     settings = {
         "a": [300, 7, 0.03, 2.0, 1, 4],
         "b": [300, 25, 0.03, 0.1, 1, 1],
         "d": [300, 5, 0.03, 0.1, 1, 4],
         "plot1_N40": [40, 3.1, 0.03, 0.1, 1, 4]
     }
-    
     N, L, v, noise, r, scale = settings["b"]
     va_values = []
     avg_va_list = []
     avg_va = RunningAverage()
 
-    model = VicsekModel(N, L, v, noise, r)
+    model = VicsekModel(N, L, v, noise, r, mode=mode)
 
-    fig, (ax1, ax2) = plt.subplots(2, figsize=(5, 10))
+    fig, (ax1, ax2) = plt.subplots(2, figsize=(10, 15))
     ax1.set_aspect('equal')
     plt.subplots_adjust(bottom=0.25)
 

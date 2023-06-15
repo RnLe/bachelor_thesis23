@@ -8,8 +8,8 @@
       "args": [],
       "stopAtEntry": false,
       "externalConsole": false,
-      "cwd": "/mnt/c/Users/renem/iCloudDrive/Bachelorarbeit",
-      "program": "/mnt/c/Users/renem/iCloudDrive/Bachelorarbeit/build/Debug/outDebug",
+      "cwd": "/mnt/c/GitHub/bachelor_thesis23",
+      "program": "/mnt/c/GitHub/bachelor_thesis23/build/Debug/outDebug",
       "MIMode": "gdb",
       "miDebuggerPath": "gdb",
       "setupCommands": [
