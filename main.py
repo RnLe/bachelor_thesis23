@@ -56,7 +56,7 @@ class VicsekModel:
     # Fixed: Fixed number of neighbors, dynamic radius.
     modes = {"radius": 0, "fixed": 1}
     
-    def __init__(self, N: int, L: float, v: float, noise: float, r: float, mode: int = modes["radius"], k_neighbours: int = 5):
+    def __init__(self, N: int, L: float, v: float, noise: float, r: float, mode: int = modes["radius"], k_neighbours: int = 50):
         self.N = N
         self.L = L
         self.v = v
@@ -86,8 +86,10 @@ class VicsekModel:
             cell_y = int(particle.y / self.r)
             neighbours = []
             distances = []
-            for dx in [-1, 0, 1]:
-                for dy in [-1, 0, 1]:
+            # mode1_cells = list(range(-self.num_cells, self.num_cells + 1))    # takes forever. No real time
+            mode1_cells = list(range(-5, 5 + 1))
+            for dx in [-1, 0, 1] if self.mode == 0 else mode1_cells:
+                for dy in [-1, 0, 1] if self.mode == 0 else mode1_cells:
                     neighbour_cell_x = (cell_x + dx) % self.num_cells
                     neighbour_cell_y = (cell_y + dy) % self.num_cells
                     for j in self.cells[neighbour_cell_x][neighbour_cell_y]:
@@ -147,8 +149,13 @@ def animate(i):
         for neighbour in first_particle.k_neighbours[1:]:
             ax1.plot([first_particle.x, neighbour.x], [first_particle.y, neighbour.y], color='red')  # draw line to neighbour
             # ax1.scatter(neighbour.x, neighbour.y, color='red')  # mark neighbour
+            
+        label_text = f'Neighbors: {len(first_particle.k_neighbours) - 1}'
+        ax1.text(L + 2, L + 2, label_text, fontsize=12, ha='right', va='top')
     
     model.update()
+    
+    
 
     ax2.clear()
     ax2.set_xlim(0, i+1)
@@ -164,6 +171,10 @@ def animate(i):
 def update_noise(val):
     """Updates the noise value in the model."""
     model.noise = val
+    
+def update_neighbors(val):
+    """Updates the noise value in the model."""
+    model.k_neighbours = val
 
 if __name__ == "__main__":
     # Flags
@@ -183,21 +194,29 @@ if __name__ == "__main__":
         "plot1_N40": [40, 3.1, 0.03, 0.1, 1, 4]
     }
     N, L, v, noise, r, scale = settings["b"]
+    k_neighbors = 5
     va_values = []
     avg_va_list = []
     avg_va = RunningAverage()
 
-    model = VicsekModel(N, L, v, noise, r, mode=mode)
+    model = VicsekModel(N, L, v, noise, r, mode=mode, k_neighbours=k_neighbors)
 
     fig, (ax1, ax2) = plt.subplots(2, figsize=(10, 15))
     ax1.set_aspect('equal')
     plt.subplots_adjust(bottom=0.25)
 
+    # Sliders
     # Add slider for the noise
     ax_noise = plt.axes([0.25, 0.15, 0.65, 0.03])
 
     slider_noise = Slider(ax_noise, 'Noise', 0.01, 5.0, valinit=noise)
     slider_noise.on_changed(update_noise)
+    
+    # Add slider for the neighbours
+    ax_neighbours = plt.axes([0.25, 0.10, 0.65, 0.03])
+
+    slider_neighbours = Slider(ax_neighbours, 'Neighbours', 0, 50, valinit=k_neighbors, valstep=1)
+    slider_neighbours.on_changed(update_neighbors)
 
     # Animate function
     ax2.legend(["Current order parameter", "Overall average order parameter"])
