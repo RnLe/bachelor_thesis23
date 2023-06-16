@@ -51,7 +51,7 @@ class Particle:
         
 
 class Perceptron:
-    def __init__(self, input_dim: int, weights = None):
+    def __init__(self, input_dim: int, weights = None, lambda_reg: float = 0.0001):
         """
         Initialize the perceptron.
 
@@ -60,9 +60,12 @@ class Perceptron:
         """
         # Initialize the weights to small random values
         if weights == None:
-            self.weights = np.random.randn(input_dim) * 0.01
+            self.weights = np.random.randn(input_dim) * 0.0001
         else:
             self.weights = weights
+            
+        # Regularization parameter
+        self.lambda_reg = lambda_reg
 
     def forward(self, input_vec: ArrayLike):
         """
@@ -93,6 +96,9 @@ class Perceptron:
         """
         # Compute the gradient of the error with respect to the weights
         gradient = error * input_vec
+        
+        # Add the regularization term to the gradient
+        gradient += self.lambda_reg * self.weights
 
         # Update the weights using gradient descent
         self.weights -= learning_rate * gradient
@@ -152,8 +158,12 @@ class SwarmModel:
                 for j in self.cells[neighbour_cell_x][neighbour_cell_y]:
                     
                     if index != j:
-                        distance = np.hypot((particle.x - self.particles[j].x) - self.L * round((particle.x - self.particles[j].x) / self.L), 
-                                        (particle.y - self.particles[j].y) - self.L * round((particle.y - self.particles[j].y) / self.L))
+                        # distance = np.hypot((particle.x - self.particles[j].x) - self.L * round((particle.x - self.particles[j].x) / self.L), 
+                        #                 (particle.y - self.particles[j].y) - self.L * round((particle.y - self.particles[j].y) / self.L))
+                        
+                        distance = ((particle.x - self.particles[j].x) - self.L * round((particle.x - self.particles[j].x) / self.L))**2 + \
+                                            ((particle.y - self.particles[j].y) - self.L * round((particle.y - self.particles[j].y) / self.L))**2
+
                         
                         neighbours.append(self.particles[j])
                         distances.append(distance)
@@ -222,12 +232,20 @@ class VicsekModel(SwarmModel):
     def get_new_particle_vicsek(self, particle: Particle, neighbours: list[Particle]):
         avg_angle = np.arctan2(np.mean([np.sin(p.angle) for p in neighbours]), np.mean([np.cos(p.angle) for p in neighbours]))
             
-        new_angle = avg_angle + np.random.uniform(-self.noise/2, self.noise/2)
+        # Convert the average angle to the range 0 to 2pi
+        if avg_angle < 0:
+            avg_angle += 2 * np.pi
+
+        new_angle = avg_angle + np.random.uniform(-self.noise / 2, self.noise / 2)
+            
+        # Ensure the new angle is in the range 0 to 2pi
+        new_angle = new_angle % (2 * np.pi)
             
         new_x = (particle.x + self.v * np.cos(new_angle)) % self.L
         new_y = (particle.y + self.v * np.sin(new_angle)) % self.L
         
         return new_x, new_y, new_angle
+
 
 class PerceptronModel(SwarmModel):
     """A class that represents the Vicsek model."""
@@ -308,7 +326,7 @@ class PerceptronModel(SwarmModel):
         for p in neighbours:
             input_vec.append(p.angle)
             
-        return input_vec
+        return np.array(input_vec)
         
     def compute_error(self, particle: Particle, neighbours: list[Particle], input_vec: list):
         """Resembles the loss function.
@@ -324,7 +342,8 @@ class PerceptronModel(SwarmModel):
         prediction = self.get_prediction(input_vec)
         
         # Mean Squared Error, MSE        
-        return (target - prediction) ** 2
+        error = (target - prediction) / len(target)
+        return np.sum(error ** 2)
     
     def get_target(self, neighbours: list[Particle]):
         """Generates a target vector, the same shape and unit as the prediction vector.
@@ -341,7 +360,7 @@ class PerceptronModel(SwarmModel):
             new_x, new_y, new_angle = VicsekModel.get_new_particle_vicsek(self, p, neighbours)
             target.append(new_angle)
             
-        return target
+        return np.array(target)
     
     def get_prediction(self, input_vec: list):
         return self.perceptron.weights * np.array(input_vec)
@@ -371,9 +390,6 @@ def animate(i):
     
     model.update()
     
-    
-
-    ax2.clear()
     ax2.set_xlim(0, i+1)
     ax2.set_ylim(0, 1)
     ax2.set_xlabel('Time')
@@ -381,8 +397,8 @@ def animate(i):
     va_values.append(model.va())
     avg_va.add(va_values[-1])
     avg_va_list.append(avg_va.average(i+1))
-    ax2.plot(va_values)
-    ax2.plot(avg_va_list, color="Green")
+    line_va.set_data(range(len(va_values)), va_values)
+    line_avg_va.set_data(range(len(avg_va_list)), avg_va_list)
 
 def update_noise(val):
     """Updates the noise value in the model."""
@@ -395,14 +411,14 @@ def update_neighbors(val):
 if __name__ == "__main__":
     # Flags
     calcOnly = False
-    use_perceptron_model = True  # Set this to True to use the PerceptronModel, False to use the VicsekModel
+    use_perceptron_model = False  # Set this to True to use the PerceptronModel, False to use the VicsekModel
 
     # Effectively the time steps t
     num_frames = 2000
 
     # Initialize Model
     modes = {"radius": 0, "fixed": 1}
-    mode = modes["fixed"]
+    mode = modes["radius"]
     
     settings = {
         "a": [300, 7, 0.03, 2.0, 1, 4],
@@ -427,6 +443,8 @@ if __name__ == "__main__":
 
     fig, (ax1, ax2) = plt.subplots(2, figsize=(10, 12))
     ax1.set_aspect('equal')
+    line_va, = ax2.plot(va_values, label="Current order parameter")
+    line_avg_va, = ax2.plot(avg_va_list, label="Overall average order parameter")
     plt.subplots_adjust(bottom=0.25)
 
     # Sliders
@@ -443,7 +461,7 @@ if __name__ == "__main__":
     slider_neighbours.on_changed(update_neighbors)
 
     # Animate function
-    ax2.legend(["Current order parameter", "Overall average order parameter"])
+    ax2.legend()
     ani = FuncAnimation(fig, animate, frames=num_frames, interval=1)
     plt.show()
     print(avg_va_list[-1])
