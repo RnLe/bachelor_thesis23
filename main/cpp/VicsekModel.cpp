@@ -34,7 +34,11 @@
             avg_angle += 2 * M_PI;
         }
         double new_angle = fmod(avg_angle + std::uniform_real_distribution<>(-noise / 2, noise / 2)(gen), 2 * M_PI);
+        // PBC
         double new_x = fmod(particle.x + v * std::cos(new_angle), L);
+        if (new_x < 0) new_x += L;
         double new_y = fmod(particle.y + v * std::sin(new_angle), L);
+        if (new_y < 0) new_y += L;
+
         return std::make_tuple(new_x, new_y, new_angle);
     }

@@ -7,12 +7,17 @@
             "args": [
                 "-fdiagnostics-color=always",
                 "-g",
-                "${file}",
+                "${workspaceFolder}/main/cpp/Particle.cpp",
+                "${workspaceFolder}/main/cpp/Perceptron.cpp",
+                "${workspaceFolder}/main/cpp/PerceptronModel.cpp",
+                "${workspaceFolder}/main/cpp/SwarmModel.cpp",
+                "${workspaceFolder}/main/cpp/VicsekModel.cpp",
+                "${workspaceFolder}/main/cpp/main.cpp",
                 "-o",
-                "${fileDirname}/${fileBasenameNoExtension}"
+                "${workspaceFolder}/main/cpp/build/Debug/outDebug"
             ],
             "options": {
-                "cwd": "${fileDirname}"
+                "cwd": "${workspaceFolder}/main/cpp"
             },
             "problemMatcher": [
                 "$gcc"

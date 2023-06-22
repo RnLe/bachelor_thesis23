@@ -10,14 +10,17 @@ int main() {
         {"b", {300, 25, 0.03, 0.5, 1}},
         {"d", {300, 5, 0.03, 0.1, 1}},
         {"plot1_N40", {40, 3.1, 0.03, 0.1, 1}},
-        {"large", {2000, 50, 0.03, 0.1, 1}}
+        {"large", {2000, 50, 0.03, 0.1, 1}},
+        {"Xlarge", {5000, 60, 0.03, 0.1, 1}},
+        {"XXlarge", {10000, 60, 0.03, 0.1, 1}},
+        {"XXlargefast", {10000, 60, 0.1, 0.1, 1}}
     };
 
     // Choose between RADIUS and FIXED
-    SwarmModel::Mode mode = SwarmModel::Mode::FIXED;
+    SwarmModel::Mode mode = SwarmModel::Mode::RADIUS;
 
     // Choose settings
-    std::vector<double> chosen_settings = settings["large"];
+    std::vector<double> chosen_settings = settings["XXlarge"];
     int N = chosen_settings[0];
     double L = chosen_settings[1];
     double v = chosen_settings[2];
@@ -30,7 +33,7 @@ int main() {
 
     int timesteps = 2000;
     // Write to file
-    model.writeToFile(timesteps, "xyz");
+    model.writeToFile(timesteps, "xyz", N=N, L=L, v=v, r=r, mode=mode);
 
     return 0;
 }

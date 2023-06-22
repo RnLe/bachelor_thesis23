@@ -8,6 +8,7 @@
 #include <fstream>
 #include "Particle.h"
 #include "SwarmModel.h"
+#include <sstream>
 
     // Member variables
     int N, mode, k_neighbors, num_cells, cellSpan = 0;
@@ -30,7 +31,7 @@
         }
 
         // Initialize cells
-        cells = std::vector<std::vector<std::vector<int>>>(num_cells, std::vector<std::vector<int>>(num_cells));
+        cells = std::vector<std::vector<std::vector<int>>>(num_cells, std::vector<std::vector<int>>(num_cells, std::vector<int>()));
 
         // Initialize mode1_cells
         for (int i = -cellSpan; i <= cellSpan; ++i) {
@@ -41,11 +42,11 @@
     // Methods
     void SwarmModel::update_cells() {
         // Reset cells
-        cells = std::vector<std::vector<std::vector<int>>>(num_cells, std::vector<std::vector<int>>(num_cells));
+        cells = std::vector<std::vector<std::vector<int>>>(num_cells, std::vector<std::vector<int>>(num_cells, std::vector<int>()));
 
         for (int i = 0; i < particles.size(); ++i) {
-            int cell_x = int(particles[i].x / r);
-            int cell_y = int(particles[i].y / r);
+            int cell_x = int(particles[i].x / r) % num_cells;
+            int cell_y = int(particles[i].y / r) % num_cells;
             cells[cell_x][cell_y].push_back(i);
         }
     }
@@ -71,8 +72,8 @@
     }
 
     std::pair<std::vector<Particle*>, std::vector<double>> SwarmModel::get_neighbors(Particle& particle, int index) {
-        int cell_x = int(particle.x / r);
-        int cell_y = int(particle.y / r);
+        int cell_x = int(particle.x / r) % num_cells;;
+        int cell_y = int(particle.y / r) % num_cells;;
         std::vector<Particle*> neighbors;
         std::vector<double> distances;
         std::vector<int> mode1_cells(cellSpan * 2 + 1);
@@ -138,9 +139,12 @@
         return std::hypot(cos_sum / particles.size(), sin_sum / particles.size());
     }
 
-    void SwarmModel::writeToFile(int timesteps, std::string filetype) {
+    void SwarmModel::writeToFile(int timesteps, std::string filetype, int N, double L, double v, double r, SwarmModel::Mode mode) {
         if (filetype == "xyz") {
-            std::ofstream file("particles.xyz");
+            std::string base = "../../data/particles_";
+            std::string parameters = "N" + std::to_string(N) + "_L" + format_float(L) + "_v" + format_float(v) + "_r" + format_float(r) + "_mode:" + std::to_string(static_cast<int>(mode));
+            std::string filename = base + parameters + ".xyz";
+            std::ofstream file(filename);
             for (int i = 0; i < timesteps; ++i) {
                 update();
                 file << particles.size() << "\n\n";
@@ -154,4 +158,23 @@
             std::cout << std::endl;
             file.close();
         }
-}
+    }
+
+
+
+    std::string SwarmModel::format_float(float number) {
+        std::ostringstream out;
+        out << std::fixed << std::setprecision(std::numeric_limits<float>::digits10);
+
+        out << number;
+
+        std::string str = out.str();
+        size_t end = str.find_last_not_of('0') + 1;
+
+        if (str[end - 1] == '.') {
+            end--;
+        }
+
+        str.erase(end, std::string::npos);
+        return str;
+    }

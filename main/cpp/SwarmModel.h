@@ -20,7 +20,8 @@ public:
     std::pair<std::vector<Particle*>, std::vector<double>> get_neighbors(Particle& particle, int index);
     virtual void update() = 0;
     double va();
-    void writeToFile(int timesteps, std::string filetype);
+    void writeToFile(int timesteps, std::string filetype, int N, double L, double v, double r, SwarmModel::Mode mode);
+    std::string format_float(float number);
 
 protected:
     // Member variables
