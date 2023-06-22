@@ -31,20 +31,7 @@ class SwarmModel:
         for i, particle in enumerate(self.particles):
             cell_x = int(particle.x / self.r)
             cell_y = int(particle.y / self.r)
-            self.cells[cell_x][cell_y].append(i)
-            
-    def get_fluctuations(self):
-        """Function to calculate the standard deviation of the cell densities.
-        """
-        mean = self.N / self.num_cells
-        sum = 0
-        for cell_row in self.cells:
-            for cell in cell_row:
-                sum += (len(cell) - mean)**2
-        # Normalize the variance
-        max_variance = (self.num_cells - 1) * mean**2 + (self.N - mean)**2
-        max_variance /= 200
-        return (sum / self.N) / max_variance    
+            self.cells[cell_x][cell_y].append(i)  
     
     def get_density_hist(self):
         densities = np.zeros(shape=self.num_cells ** 2)
@@ -134,6 +121,7 @@ class SwarmModel:
             effective_radii[i] = p.cellRange
         
         return effective_radii
+    
     # This method is virtual and characterizes the model which is implemented
     def update(self):
         """Updates the model."""
@@ -158,7 +146,7 @@ class SwarmModel:
                     file.write(f"{len(self.particles)}\n")
                     file.write("\n")
                     for particle in self.particles:
-                        file.write(f"C {particle.x} {particle.y} 0\n")
+                        file.write(f"{particle.x} {particle.y}\n")
         
     
 # ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -306,7 +294,7 @@ class PerceptronModel(SwarmModel):
         Returns:
             float: 
         """
-        target = self.get_target(neighbors)
+        target = self.get_target(particle, neighbors)
         prediction = self.get_prediction(input_vec)
         
         # Mean Squared Error, MSE        
@@ -314,8 +302,8 @@ class PerceptronModel(SwarmModel):
         error /= len(target)
         return np.sum(error ** 2)
     
-    def get_target(self, neighbors: list[Particle]):
-        """Generates a target vector, the same shape and unit as the prediction vector.
+    def get_target(self, particle: Particle, neighbors: list[Particle]):
+        """Generates the target angle.
 
         Args:
             particle (Particle): _description_
@@ -324,12 +312,9 @@ class PerceptronModel(SwarmModel):
         Returns:
             _type_: _description_
         """        
-        target = []
-        for p in neighbors:
-            new_x, new_y, new_angle = VicsekModel.get_new_particle_vicsek(self, p, neighbors)
-            target.append(new_angle)
+        new_x, new_y, new_angle = VicsekModel.get_new_particle_vicsek(self, particle, neighbors)
             
-        return np.array(target)
+        return new_angle
     
     def get_prediction(self, input_vec: list):
         return self.perceptron.forward(input_vec)
