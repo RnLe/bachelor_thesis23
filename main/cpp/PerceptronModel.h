@@ -14,9 +14,10 @@ public:
     enum LearningMode { UNIFORM, IMITATEVICSEK, MAXIMIZEORDER };
 
     // Parameterized Constructor
-    PerceptronModel(int N, double L, double v, double noise, double r, Mode mode, int k_neighbors, double learning_rate, std::vector<double> weights);
+    PerceptronModel(int N, double L, double v, double noise, double r, Mode mode, int k_neighbors, bool ZDimension = false, bool seed = false, double learning_rate = 0.0001, std::vector<double> weights = std::vector<double>());
 
     // Methods
+    void writeToFile(int timesteps, std::string filetype, int N, double L, double v, double r, SwarmModel::Mode mode, int k, double noise);
     void learn();
     void update() override;
     std::vector<double> neighbors_to_input_vec(std::vector<Particle*> neighbors, std::vector<double> distances);

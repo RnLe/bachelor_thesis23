@@ -60,17 +60,18 @@ def animate(i):
     line_avg_va.set_data(range(len(avg_va_list)), avg_va_list)
 
     # Create histograms
-    ax3.clear()
-    ax5.clear()
-    ax3.hist(model.get_dynamic_radius(), bins=7, alpha=0.5, label='Dynamic Radius')
-    ax3.set_xlim((0, 6))
-    ax3.set_ylim((0, 200))
-    ax5.hist(model.get_density_hist(), bins=20, alpha=0.5, label='Cell Densities', color='orange')
-    ax5.set_ylim((0, 500))
-    # ax5.set_xlim((0, 1))
-    
-    ax3.legend(loc='upper right')
-    ax5.legend(loc='upper right')
+    if histograms:
+        ax3.clear()
+        ax5.clear()
+        ax3.hist(model.get_dynamic_radius(), bins=7, alpha=0.5, label='Dynamic Radius')
+        ax3.set_xlim((0, 6))
+        ax3.set_ylim((0, 200))
+        ax5.hist(model.get_density_hist(), bins=20, alpha=0.5, label='Cell Densities', color='orange')
+        ax5.set_ylim((0, 500))
+        # ax5.set_xlim((0, 1))
+        
+        ax3.legend(loc='upper right')
+        ax5.legend(loc='upper right')
     
     
 def update_noise(val):
@@ -92,9 +93,10 @@ if __name__ == "__main__":
     pr.enable()
     
     # Flags
-    calcOnly = True
+    calcOnly = False
     use_perceptron_model = False  # Set this to True to use the PerceptronModel, False to use the VicsekModel
     training = False
+    histograms = True
 
     # Effectively the time steps t
     num_frames = 2000
@@ -110,7 +112,7 @@ if __name__ == "__main__":
         "plot1_N40": [40, 3.1, 0.03, 0.1, 1, 4],
         "large": [2000, 50, 0.03, 0.1, 1, 4]      
     }
-    N, L, v, noise, r, scale = settings["large"]
+    N, L, v, noise, r, scale = settings["b"]
     k_neighbors = 5
     cellSpan = 5 if mode == 1 else 1
     va_values = []

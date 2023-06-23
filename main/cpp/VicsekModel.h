@@ -9,7 +9,7 @@
 
 class VicsekModel : public SwarmModel {
 public:
-    VicsekModel(int N, double L, double v, double noise, double r, SwarmModel::Mode mode = RADIUS, int k_neighbors = 5, bool ZDimension = false, bool seed = false)
+    VicsekModel(int N, double L, double v, double noise, double r, SwarmModel::Mode mode = RADIUS, int k_neighbors = 5, bool ZDimension = false, bool seed = true)
         : SwarmModel(N, L, v, noise, r, mode, k_neighbors, ZDimension, seed) {}
         
     virtual ~VicsekModel() = default;
