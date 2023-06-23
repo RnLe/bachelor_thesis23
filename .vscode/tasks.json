@@ -7,7 +7,6 @@
             "args": [
                 "-fdiagnostics-color=always",
                 "-g",
-                "${workspaceFolder}/main/cpp/Particle.cpp",
                 "${workspaceFolder}/main/cpp/Perceptron.cpp",
                 "${workspaceFolder}/main/cpp/PerceptronModel.cpp",
                 "${workspaceFolder}/main/cpp/SwarmModel.cpp",

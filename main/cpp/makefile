@@ -1,5 +1,5 @@
 CXX = gcc
-CXXFLAGS = -Ofast -std=c++20
+CXXFLAGS = -Ofast -std=c++20 -fopenmp
 
 SRC_DIR = .
 OBJ_DIR = ./build/Debug

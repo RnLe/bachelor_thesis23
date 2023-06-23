@@ -7,6 +7,8 @@
 #include <random>
 #include <numeric>
 
+    // This class only operates in 2D. Dummy variables are introduced for the code to work.
+
     // Constructor
     PerceptronModel::PerceptronModel(int N, double L, double v, double noise, double r, Mode mode, int k_neighbors, double learning_rate, std::vector<double> weights)
         : VicsekModel(N, L, v, noise, r, mode, k_neighbors), learning_rate(learning_rate) {
@@ -30,9 +32,11 @@
             double error = compute_error(particle, neighbors, input_vec);
             perceptron.update_weights(input_vec, error, learning_rate);
             double new_angle = perceptron.forward(input_vec);
+            double new_polarAngle = M_PI / 2.;
             double new_x = fmod(particle.x + v * std::cos(new_angle), L);
             double new_y = fmod(particle.y + v * std::sin(new_angle), L);
-            new_particles.push_back(Particle(new_x, new_y, new_angle, neighbors));
+            double new_z = 0.0;
+            new_particles.push_back(Particle(new_x, new_y, new_z, new_angle, new_polarAngle, neighbors));
         }
         particles = new_particles;
     }
@@ -47,10 +51,12 @@
             std::vector<double> distances;
             std::tie(neighbors, distances) = get_neighbors(particle, i);
             std::vector<double> input_vec = neighbors_to_input_vec(neighbors, distances);
-            double new_angle = fmod(perceptron.forward(input_vec) + std::uniform_real_distribution<>(-noise / 2, noise / 2)(gen), 2 * M_PI);
+            double new_angle = fmod(perceptron.forward(input_vec) + std::uniform_real_distribution<>(-noise / 2, noise / 2)(gen1), 2 * M_PI);
+            double new_polarAngle = M_PI / 2.;
             double new_x = fmod(particle.x + v * std::cos(new_angle), L);
             double new_y = fmod(particle.y + v * std::sin(new_angle), L);
-            new_particles.push_back(Particle(new_x, new_y, new_angle, neighbors));
+            double new_z = 0.0;
+            new_particles.push_back(Particle(new_x, new_y, new_z, new_angle, new_polarAngle, neighbors));
         }
         particles = new_particles;
     }
@@ -78,8 +84,8 @@
 
     // get_target method
     double PerceptronModel::get_target(Particle& particle, std::vector<Particle*> neighbors) {
-        double new_x, new_y, new_angle;
-        std::tie(new_x, new_y, new_angle) = get_new_particle_vicsek(particle, neighbors);
+        double new_x, new_y, new_z, new_angle, new_polarAngle;
+        std::tie(new_x, new_y, new_z, new_angle, new_polarAngle) = get_new_particle_vicsek(particle, neighbors);
         return new_angle;
     }
 
