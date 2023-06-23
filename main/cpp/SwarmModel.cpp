@@ -115,9 +115,9 @@
             double tolerance = 0.1;
             double fractional_part = r - int(r);
             if (fractional_part < tolerance) {
-                rangeOfCells = int(r);
-            } else {
                 rangeOfCells = int(r) + 1;
+            } else {
+                rangeOfCells = int(r) + 2;
             }
         }
 
@@ -167,8 +167,11 @@
                             if (index != j) {
                                 double distance = std::pow((particle.x - particles[j].x) - L * std::round((particle.x - particles[j].x) / L), 2) +
                                 std::pow((particle.y - particles[j].y) - L * std::round((particle.y - particles[j].y) / L), 2);
-                                neighbors.push_back(&particles[j]);
-                                distances.push_back(distance);
+                                // If mode==radius and distance smaller that radius OR if mode==fixed (count all neighbors in last layer and sort by distance later)
+                                if ((mode == 0 && distance < (r * r)) || mode == 1) {
+                                    neighbors.push_back(&particles[j]);
+                                    distances.push_back(distance);
+                                }       
                             }
                         }
                     }
@@ -180,28 +183,28 @@
         
         
 
-        // Parallelization might lead to more neighbors in the list than desired.
-        // Additional check to truncate the neighors.
-        if(neighbors.size() > k_neighbors) {
-            // Get the indices of the k_neighbors smallest elements in 'distances'
-            std::vector<size_t> indices(distances.size());
-            std::iota(indices.begin(), indices.end(), 0);  // Fill with 0, 1, ..., distances.size() - 1
-            std::partial_sort(indices.begin(), indices.begin() + k_neighbors, indices.end(),
-                            [&distances](size_t i1, size_t i2) { return distances[i1] < distances[i2]; });
-            indices.resize(k_neighbors);  // Only keep the first k_neighbors indices
+        // // Parallelization might lead to more neighbors in the list than desired.
+        // // Additional check to truncate the neighors.
+        // if(neighbors.size() > k_neighbors) {
+        //     // Get the indices of the k_neighbors smallest elements in 'distances'
+        //     std::vector<size_t> indices(distances.size());
+        //     std::iota(indices.begin(), indices.end(), 0);  // Fill with 0, 1, ..., distances.size() - 1
+        //     std::partial_sort(indices.begin(), indices.begin() + k_neighbors, indices.end(),
+        //                     [&distances](size_t i1, size_t i2) { return distances[i1] < distances[i2]; });
+        //     indices.resize(k_neighbors);  // Only keep the first k_neighbors indices
 
-            // Construct new 'neighbors' and 'distances' vectors with only the closest neighbors
-            std::vector<Particle*> new_neighbors(k_neighbors);
-            std::vector<double> new_distances(k_neighbors);
-            for(size_t i = 0; i < k_neighbors; ++i) {
-                new_neighbors[i] = neighbors[indices[i]];
-                new_distances[i] = distances[indices[i]];
-            }
+        //     // Construct new 'neighbors' and 'distances' vectors with only the closest neighbors
+        //     std::vector<Particle*> new_neighbors(k_neighbors);
+        //     std::vector<double> new_distances(k_neighbors);
+        //     for(size_t i = 0; i < k_neighbors; ++i) {
+        //         new_neighbors[i] = neighbors[indices[i]];
+        //         new_distances[i] = distances[indices[i]];
+        //     }
 
-            // Replace 'neighbors' and 'distances' with their new versions
-            neighbors = std::move(new_neighbors);
-            distances = std::move(new_distances);
-        }
+        //     // Replace 'neighbors' and 'distances' with their new versions
+        //     neighbors = std::move(new_neighbors);
+        //     distances = std::move(new_distances);
+        // }
 
         particle.cellRange = boundary - 1;
 
@@ -268,7 +271,7 @@
             std::string base = "../../data/particles_";
             std::string radiusOrK = mode == SwarmModel::Mode::FIXED ? "_k" + format_float(k) : "_r" + format_float(r);
             std::string parameters = "t" + std::to_string(timesteps) + "_N" + std::to_string(N) + "_L" + format_float(L) + "_v" + format_float(v) + "_n" + format_float(noise)
-            + radiusOrK + "_mode_" + (mode == SwarmModel::Mode::FIXED ? "fixed" : "radius") + "_model_" + model;
+            + radiusOrK + "_mode_" + (mode == SwarmModel::Mode::FIXED ? "fixed" : "radius") + "_model_" + model+ "_" + (ZDimension ? "3D" : "2D");
             std::string filename = base + parameters + ".xyz";
             std::ofstream file(filename);
             for (int i = 0; i < timesteps; ++i) {

@@ -10,13 +10,17 @@
     // This class only operates in 2D. Dummy variables are introduced for the code to work.
 
     // Constructor
-    PerceptronModel::PerceptronModel(int N, double L, double v, double noise, double r, Mode mode, int k_neighbors, double learning_rate, std::vector<double> weights)
-        : VicsekModel(N, L, v, noise, r, mode, k_neighbors), learning_rate(learning_rate) {
+    PerceptronModel::PerceptronModel(int N, double L, double v, double noise, double r, Mode mode, int k_neighbors, bool ZDimension, bool seed, double learning_rate, std::vector<double> weights)
+        : VicsekModel(N, L, v, noise, r, mode, k_neighbors, ZDimension, seed), learning_rate(learning_rate) {
         if (weights.empty()) {
             perceptron = Perceptron(k_neighbors + 1);
         } else {
             perceptron = Perceptron(k_neighbors + 1, weights);
         }
+    }
+
+    void PerceptronModel::writeToFile(int timesteps, std::string filetype, int N, double L, double v, double r, SwarmModel::Mode mode, int k, double noise) {
+        SwarmModel::writeToFile(timesteps, filetype, N, L, v, r, mode, k, noise, "Perceptron");
     }
 
     // learn method
@@ -54,7 +58,11 @@
             double new_angle = fmod(perceptron.forward(input_vec) + std::uniform_real_distribution<>(-noise / 2, noise / 2)(gen1), 2 * M_PI);
             double new_polarAngle = M_PI / 2.;
             double new_x = fmod(particle.x + v * std::cos(new_angle), L);
+            if (new_x < 0) new_x += L;
+            if (new_x > L) new_x -= L;
             double new_y = fmod(particle.y + v * std::sin(new_angle), L);
+            if (new_y < 0) new_y += L;
+            if (new_y > L) new_y -= L;
             double new_z = 0.0;
             new_particles.push_back(Particle(new_x, new_y, new_z, new_angle, new_polarAngle, neighbors));
         }
