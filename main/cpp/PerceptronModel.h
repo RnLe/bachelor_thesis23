@@ -25,7 +25,6 @@ public:
     double get_target(Particle& particle, std::vector<Particle*> neighbors);
     double get_prediction(std::vector<double> input_vec);
 
-private:
     double learning_rate;
     Perceptron perceptron;
 };

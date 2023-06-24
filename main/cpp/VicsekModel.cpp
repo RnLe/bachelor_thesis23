@@ -57,8 +57,8 @@
         double new_polarAngle = avg_polarAngle;
         
         if (noise != 0.0) {
-            double new_angle = fmod(avg_angle + std::uniform_real_distribution<>(-noise / 2, noise / 2)(fastgen1), 2 * M_PI);
-            double new_polarAngle = fmod(avg_polarAngle + std::uniform_real_distribution<>(-noise / 2, noise / 2)(fastgen2), M_PI);
+            new_angle = fmod(avg_angle + std::uniform_real_distribution<>(-noise / 2, noise / 2)(gen1), 2 * M_PI);
+            new_polarAngle = fmod(avg_polarAngle + std::uniform_real_distribution<>(-noise / 2, noise / 2)(gen2), M_PI);
         }
 
         double new_x;
@@ -68,25 +68,17 @@
         // PBC
         if (ZDimension) {
             new_x = fmod(particle.x + v * std::sin(new_polarAngle) * std::cos(new_angle), L);
-            if (new_x < 0) new_x += L;
-            
             new_y = fmod(particle.y + v * std::sin(new_polarAngle) * std::sin(new_angle), L);
-            if (new_y < 0) new_y += L;
-            
             new_z = fmod(particle.z + v * std::cos(new_polarAngle), L);
             if (new_z < 0) new_z += L;
         } else {
             new_x = fmod(particle.x + v * std::cos(new_angle), L);
-            if (new_x < 0) new_x += L;
-            
-            new_y = fmod(particle.y + v * std::sin(new_angle), L);
-            if (new_y < 0) new_y += L;
-            
+            new_y = fmod(particle.y + v * std::sin(new_angle), L);            
             new_z = 0.;
         }
-        
-        
-        
+        if (new_x < 0) new_x += L;
+        if (new_y < 0) new_y += L;
+
 
         return std::make_tuple(new_x, new_y, new_z, new_angle, new_polarAngle);
     }

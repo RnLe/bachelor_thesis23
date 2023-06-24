@@ -12,10 +12,12 @@
     // Constructor
     PerceptronModel::PerceptronModel(int N, double L, double v, double noise, double r, Mode mode, int k_neighbors, bool ZDimension, bool seed, double learning_rate, std::vector<double> weights)
         : VicsekModel(N, L, v, noise, r, mode, k_neighbors, ZDimension, seed), learning_rate(learning_rate) {
+        // Dimension multiplier is used to scale the input dimension for the perceptron
+        int dimension_multiplier = ZDimension ? 3 : 2;
         if (weights.empty()) {
-            perceptron = Perceptron(k_neighbors + 1);
+            this->perceptron = Perceptron(k_neighbors + 1, ZDimension);
         } else {
-            perceptron = Perceptron(k_neighbors + 1, weights);
+            this->perceptron = Perceptron(k_neighbors + 1, ZDimension, weights);
         }
     }
 
@@ -35,7 +37,8 @@
             std::vector<double> input_vec = neighbors_to_input_vec(neighbors, distances);
             double error = compute_error(particle, neighbors, input_vec);
             perceptron.update_weights(input_vec, error, learning_rate);
-            double new_angle = perceptron.forward(input_vec);
+            double new_angle = perceptron.forward(input_vec, ZDimension);
+            new_angle = fmod(new_angle + std::uniform_real_distribution<>(-noise / 2, noise / 2)(fastgen1), 2 * M_PI);
             double new_polarAngle = M_PI / 2.;
             double new_x = fmod(particle.x + v * std::cos(new_angle), L);
             double new_y = fmod(particle.y + v * std::sin(new_angle), L);
@@ -55,7 +58,7 @@
             std::vector<double> distances;
             std::tie(neighbors, distances) = get_neighbors(particle, i);
             std::vector<double> input_vec = neighbors_to_input_vec(neighbors, distances);
-            double new_angle = fmod(perceptron.forward(input_vec) + std::uniform_real_distribution<>(-noise / 2, noise / 2)(gen1), 2 * M_PI);
+            double new_angle = fmod(perceptron.forward(input_vec, ZDimension) + std::uniform_real_distribution<>(-noise / 2, noise / 2)(gen1), 2 * M_PI);
             double new_polarAngle = M_PI / 2.;
             double new_x = fmod(particle.x + v * std::cos(new_angle), L);
             if (new_x < 0) new_x += L;
@@ -72,8 +75,24 @@
     // neighbors_to_input_vec method
     std::vector<double> PerceptronModel::neighbors_to_input_vec(std::vector<Particle*> neighbors, std::vector<double> distances) {
         std::vector<double> input_vec;
+        // Convert the angle of the particles in x, y, (z) components
+        double cos_phi = 0.0;   // x
+        double sin_phi = 0.0;   // y
+        double sin_theta = 0.0; // z
+        // Input and weights are ordered
         for (Particle* p : neighbors) {
-            input_vec.push_back(p->angle);
+            cos_phi = std::cos(p->angle);
+            input_vec.push_back(cos_phi);
+        }
+        for (Particle* p : neighbors) {
+            sin_phi = std::sin(p->angle);
+            input_vec.push_back(sin_phi);
+        }
+        if (ZDimension) {
+            for (Particle* p : neighbors) {
+                sin_theta = std::sin(p->polarAngle);
+                input_vec.push_back(sin_theta);
+            }
         }
         return input_vec;
     }
@@ -99,5 +118,5 @@
 
     // get_prediction method
     double PerceptronModel::get_prediction(std::vector<double> input_vec) {
-        return perceptron.forward(input_vec);
+        return perceptron.forward(input_vec, ZDimension);
     }

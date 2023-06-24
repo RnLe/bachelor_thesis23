@@ -6,6 +6,8 @@
 int main() {
     // Hyperparameters
     std::map<std::string, std::vector<double>> settings = {
+        {"Xsmall", {20, 20, 0.03, 0.1, 1}},
+        {"small", {100, 30, 0.03, 0.1, 1}},
         {"a", {300, 7, 0.03, 2.0, 1}},
         {"b", {300, 25, 0.03, 0.5, 1}},
         {"d", {300, 5, 0.03, 0.1, 1}},
@@ -27,19 +29,19 @@ int main() {
 
     // Flags
     bool ZDimension = false;     // 2D or 3D
-    bool seed = true;           // Whether to use a seed for reproducability
+    bool seed = true;            // Whether to use a seed for reproducability
 
     // Duration of simulation
     int timesteps = 1000;
 
     // Choose settings
-    std::vector<double> chosen_settings = settings["large"];
+    std::vector<double> chosen_settings = settings["small"];
     int N = chosen_settings[0];
     double L = chosen_settings[1];
     double v = chosen_settings[2];
     double noise = chosen_settings[3];
     double r = chosen_settings[4];
-    int k_neighbors = 5;
+    int k_neighbors = 2;
 
 
     // Create model

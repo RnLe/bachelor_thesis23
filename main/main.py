@@ -96,7 +96,7 @@ if __name__ == "__main__":
     calcOnly = False
     use_perceptron_model = False  # Set this to True to use the PerceptronModel, False to use the VicsekModel
     training = False
-    histograms = True
+    histograms = False
 
     # Effectively the time steps t
     num_frames = 2000
@@ -106,6 +106,7 @@ if __name__ == "__main__":
     mode = modes["fixed"]
     
     settings = {
+        "small": [20, 10, 0.03, 0.2, 1, 1],
         "a": [300, 7, 0.03, 2.0, 1, 4],
         "b": [300, 25, 0.03, 0.5, 1, 1],
         "d": [300, 5, 0.03, 0.1, 1, 4],
@@ -113,7 +114,7 @@ if __name__ == "__main__":
         "large": [2000, 50, 0.03, 0.1, 1, 4]      
     }
     N, L, v, noise, r, scale = settings["b"]
-    k_neighbors = 5
+    k_neighbors = 2
     cellSpan = 5 if mode == 1 else 1
     va_values = []
     avg_va_list = []

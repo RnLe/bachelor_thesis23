@@ -45,7 +45,7 @@
         }
 
         for (int i = 0; i < N; ++i) {
-            particles.push_back(Particle(dis_x(gen1), dis_y(gen2), dis_z(gen3), angle_dis(gen1), polarAngle_dis(gen2)));
+            particles.push_back(Particle(dis_x(gen1), dis_y(gen2), dis_z(gen3), angle_dis(gen2), polarAngle_dis(gen1)));
         }
 
         // Initialize cells
