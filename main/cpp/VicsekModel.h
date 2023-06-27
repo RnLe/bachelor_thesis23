@@ -16,8 +16,9 @@ public:
 
     void update() override;
 
-    std::pair<std::vector<Particle*>, std::vector<double>> reduceQuantileNeighbors(Particle& particle, int index);
-    std::tuple<double, double, double, double, double> wrapper_new_particle_vicsek(std::vector<Particle*> neighbors);
+    double average_angle_particles(const std::vector<Particle*>& particles);
+    double average_angle(std::vector<double> angles);
+    std::tuple<double, double, double, double, double> get_new_particle_quantile(Particle& particle, std::vector<Particle*> neighbors);
     std::tuple<double, double, double, double, double> get_new_particle_vicsek(Particle& particle, std::vector<Particle*> neighbors);
 
     void writeToFile(int timesteps, std::string filetype, int N, double L, double v, double r, SwarmModel::Mode mode, int k, double noise);

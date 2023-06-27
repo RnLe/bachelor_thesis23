@@ -298,10 +298,20 @@
 
     void SwarmModel::writeToFile(int timesteps, std::string filetype, int N, double L, double v, double r, SwarmModel::Mode mode, int k, double noise, std::string model) {
         if (filetype == "xyz") {
+            std::string modus;   
+            if (mode == SwarmModel::Mode::FIXED) {
+                modus = "kNeighbors";
+            }
+            else if (mode == SwarmModel::Mode::RADIUS) {
+                modus = "rRadius";
+            }
+            else if (mode == SwarmModel::Mode::QUANTILE) {
+                modus = "kQuantiles";
+            }
             std::string base = "../../data/particles_";
-            std::string radiusOrK = mode == SwarmModel::Mode::FIXED ? "_k" + helperFunctions::format_float(k) : "_r" + helperFunctions::format_float(r);
+            std::string radiusOrK = mode == (SwarmModel::Mode::FIXED or SwarmModel::Mode::QUANTILE) ? "_k" + helperFunctions::format_float(k) : "_r" + helperFunctions::format_float(r);
             std::string parameters = "t" + std::to_string(timesteps) + "_N" + std::to_string(N) + "_L" + helperFunctions::format_float(L) + "_v" + helperFunctions::format_float(v) + "_n" + helperFunctions::format_float(noise)
-            + radiusOrK + "_mode_" + (mode == SwarmModel::Mode::FIXED ? "fixed" : "radius") + "_model_" + model+ "_" + (ZDimension ? "3D" : "2D");
+            + radiusOrK + "_mode_" + modus + "_model_" + model+ "_" + (ZDimension ? "3D" : "2D");
             std::string filename = base + parameters + ".xyz";
             std::ofstream file(filename);
             for (int i = 0; i < timesteps; ++i) {
