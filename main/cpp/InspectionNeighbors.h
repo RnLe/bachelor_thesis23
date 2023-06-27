@@ -27,12 +27,14 @@ public:
     // Constructor
     Inspector();
 
-    void runForAllNoiseLevels_Fig2a(bool writeToFile, int timesteps = 5000);
     // Wrapper for the densitiesVicsekValues() method
+    void runForAllNoiseLevels_Fig2a(bool writeToFile, int timesteps = 5000);
+    void runForAllNoiseLevels_Fig2a_quantile(bool writeToFile, int timesteps = 5000);
     void runForAllNoiseLevels_Fig2b(bool writeToFile, int timesteps = 5000);
+    void runForAllNoiseLevels_Fig2b_quantile(bool writeToFile, int timesteps = 5000);
     // Function to check the order parameter
-    void equilibrate_va_VicsekValues_2a(bool writeToFile = false, std::string fileNamePrefix, std::vector<double> noises);
-    void equilibrate_va_VicsekValues_2b(bool writeToFile = false, std::string fileNamePrefix);
+    void equilibrate_va_VicsekValues_2a(bool writeToFile = false, std::string fileNamePrefix = "Fig2a", std::vector<double> noises = {});
+    void equilibrate_va_VicsekValues_2b(bool writeToFile = false, std::string fileNamePrefix = "Fig2a");
 
 private:
     std::vector<int> N_densities;
