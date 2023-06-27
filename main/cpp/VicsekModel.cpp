@@ -18,20 +18,58 @@
             std::vector<Particle*> neighbors;
             std::vector<double> distances;
             std::tie(neighbors, distances) = get_neighbors(particle, i);
-            if (mode == SwarmModel::Mode::QUANTILE) std::tie(neighbors, distances) = reduceQuantileNeighbors(particle, i);
-            double new_x, new_y, new_z, new_angle, new_polarAngle;
+
+            // Create temporary neighbor lists for the Quantile Method
+            // This is inherently unoptimized. Urgently review the code. Its written to work for a specific case.
+            std::vector<Particle*> neighbors_temp;
+            std::vector<double> distances_temp;
+            if (mode == SwarmModel::Mode::QUANTILE) std::tie(neighbors_temp, distances_temp) = reduceQuantileNeighbors(particle, i);
+
+            double new_x, new_y, new_z, new_angle, new_polarAngle, new_quantileAngle;
+            if (mode == SwarmModel::Mode::QUANTILE) {
+                std::tie(new_x, new_y, new_z, new_quantileAngle, new_polarAngle) = get_new_particle_vicsek(particle, neighbors_temp);
+            }
+
             std::tie(new_x, new_y, new_z, new_angle, new_polarAngle) = get_new_particle_vicsek(particle, neighbors);
             particle.x = new_x;
             particle.y = new_y;
             particle.z = ZDimension ? new_z : 0;
-            particle.angle = new_angle;
+            particle.angle = (mode == SwarmModel::Mode::QUANTILE) ? new_quantileAngle : new_angle;
             particle.polarAngle = ZDimension ? new_polarAngle : M_PI / 2;
             particle.k_neighbors = neighbors;
         }
     }
 
     std::pair<std::vector<Particle*>, std::vector<double>> VicsekModel::reduceQuantileNeighbors(Particle& particle, int index) {
-        
+        std::vector<Particle*> neighbors;
+        std::vector<double> distances;
+        std::tie(neighbors, distances) = get_neighbors(particle, index);
+
+        if (neighbors.size() <= k_neighbors) {
+            return {neighbors, distances};
+        }
+
+        std::vector<Particle*> reduced_neighbors;
+        std::vector<double> reduced_distances;
+        int bin_size = neighbors.size() / k_neighbors;
+
+        for (int i = 0; i < k_neighbors; ++i) {
+            int start = i * bin_size;
+            int end = (i+1) * bin_size;
+            if (i == k_neighbors - 1) end = neighbors.size();  // Take the remaining neighbors into the last bin if they are not evenly divisible
+
+            std::vector<Particle*> bin_neighbors(neighbors.begin() + start, neighbors.begin() + end);
+            
+            double new_x, new_y, new_z, new_angle, new_polarAngle;
+            std::tie(new_x, new_y, new_z, new_angle, new_polarAngle) = wrapper_new_particle_vicsek(bin_neighbors);
+
+            Particle* avg_particle = new Particle(new_x, new_y, new_z, new_angle, new_polarAngle);
+            reduced_neighbors.push_back(avg_particle);
+            // Assuming the distance to the averaged particle is the average of the distances to the particles in the bin
+            reduced_distances.push_back(std::accumulate(distances.begin() + start, distances.begin() + end, 0.0) / bin_size);
+        }
+
+        return {reduced_neighbors, reduced_distances};
     }
 
     // This is a wrapper for the get_new_particle_vicsek() method which means over a particle list only, instead of requiring a particle explicitly.
