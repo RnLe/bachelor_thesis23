@@ -54,6 +54,7 @@
     }
 
     // Method to mean over a list of angles (Only 2D right now)
+    // Averages without applying noise
     double VicsekModel::average_angle(const std::vector<double> angles) {
         double sin_sum = 0.0;
         double cos_sum = 0.0;
@@ -68,13 +69,7 @@
             avg_angle += 2 * M_PI;
         }
 
-        double new_angle = avg_angle;
-        
-        if (noise != 0.0) {
-            new_angle = fmod(avg_angle + std::uniform_real_distribution<>(-noise / 2, noise / 2)(gen1), 2 * M_PI);
-        }
-
-        return new_angle;
+        return avg_angle;
     }
 
     // Method to handle the quantile mode
