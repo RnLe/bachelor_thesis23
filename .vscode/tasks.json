@@ -11,6 +11,8 @@
                 "${workspaceFolder}/main/cpp/PerceptronModel.cpp",
                 "${workspaceFolder}/main/cpp/SwarmModel.cpp",
                 "${workspaceFolder}/main/cpp/VicsekModel.cpp",
+                "${workspaceFolder}/main/cpp/helperFuncions.cpp",
+                "${workspaceFolder}/main/cpp/InspectionNeighbors.cpp",
                 "${workspaceFolder}/main/cpp/main.cpp",
                 "-o",
                 "${workspaceFolder}/main/cpp/build/Debug/outDebug"

@@ -16,9 +16,11 @@ public:
 
     void update() override;
 
-    void writeToFile(int timesteps, std::string filetype, int N, double L, double v, double r, SwarmModel::Mode mode, int k, double noise);
+    std::pair<std::vector<Particle*>, std::vector<double>> reduceQuantileNeighbors(Particle& particle, int index);
+    std::tuple<double, double, double, double, double> wrapper_new_particle_vicsek(std::vector<Particle*> neighbors);
     std::tuple<double, double, double, double, double> get_new_particle_vicsek(Particle& particle, std::vector<Particle*> neighbors);
 
+    void writeToFile(int timesteps, std::string filetype, int N, double L, double v, double r, SwarmModel::Mode mode, int k, double noise);
 };
 
 #endif // VICSEKMODEL_H

@@ -8,7 +8,7 @@
 
 class SwarmModel {
 public:
-    enum Mode { RADIUS, FIXED };
+    enum Mode { RADIUS, FIXED, QUANTILE };
 
     // Constructor
     SwarmModel(int N, double L, double v, double noise, double r, Mode mode, int k_neighbors, bool ZDimension = false, bool seed = false);
@@ -22,8 +22,8 @@ public:
     virtual void update() = 0;
     double mean_direction2D();
     std::pair<double, double> mean_direction3D();
+    std::pair<int, std::pair<double, double>> mean_direction_watcher(int timeLimit = -1, double tolerance = 1e-6);
     void writeToFile(int timesteps, std::string filetype, int N, double L, double v, double r, SwarmModel::Mode mode, int k, double noise, std::string model);
-    std::string format_float(float number);
 
 protected:
     // Member variables

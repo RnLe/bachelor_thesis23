@@ -1,3 +1,7 @@
+#include "helperFunctions.h"
+#include "Particle.h"
+#include "SwarmModel.h"
+
 #include <vector>
 #include <cmath>
 #include <random>
@@ -6,8 +10,6 @@
 #include <iostream>
 #include <iomanip>
 #include <fstream>
-#include "Particle.h"
-#include "SwarmModel.h"
 #include <sstream>
 #include <omp.h>
 
@@ -265,12 +267,40 @@
         return {mean_azimuth, mean_polar};
     }
 
+    std::pair<int, std::pair<double, double>> SwarmModel::mean_direction_watcher(int timeLimit, double tolerance) {
+        double previous2 = 0.0, previous1 = 0.0, current = 0.0;
+        int timeStep = 0;
+        double difference = 0.0;
+
+        while (timeLimit == -1 || timeStep < timeLimit) {
+            update();  // perform a simulation step
+            if (ZDimension) {
+                auto dir3D = mean_direction3D();
+                current = std::hypot(dir3D.first, dir3D.second);  // hypot might not be the best measure here, adapt as needed later
+            } else {
+                current = mean_direction2D();
+            }
+            difference = std::abs(current - previous1);
+            if (timeStep > 1 && std::abs(previous1 - previous2) < tolerance && difference < tolerance) {
+                break;  // exit loop if the changes in order parameter are smaller than the tolerance for the last two steps
+            }
+            previous2 = previous1;
+            previous1 = current;
+            timeStep++;
+
+            // Print progress and difference to the previous value
+            std::cout << "\033[1;32mEquilibrating: " << N << " particles at t = " << timeStep << ", va = " << current << ", difference to previous = " << difference << "\033[0m\r";
+            std::cout.flush();
+        }
+        return std::make_pair(timeStep, std::make_pair(current, previous2));
+    }
+
 
     void SwarmModel::writeToFile(int timesteps, std::string filetype, int N, double L, double v, double r, SwarmModel::Mode mode, int k, double noise, std::string model) {
         if (filetype == "xyz") {
             std::string base = "../../data/particles_";
-            std::string radiusOrK = mode == SwarmModel::Mode::FIXED ? "_k" + format_float(k) : "_r" + format_float(r);
-            std::string parameters = "t" + std::to_string(timesteps) + "_N" + std::to_string(N) + "_L" + format_float(L) + "_v" + format_float(v) + "_n" + format_float(noise)
+            std::string radiusOrK = mode == SwarmModel::Mode::FIXED ? "_k" + helperFunctions::format_float(k) : "_r" + helperFunctions::format_float(r);
+            std::string parameters = "t" + std::to_string(timesteps) + "_N" + std::to_string(N) + "_L" + helperFunctions::format_float(L) + "_v" + helperFunctions::format_float(v) + "_n" + helperFunctions::format_float(noise)
             + radiusOrK + "_mode_" + (mode == SwarmModel::Mode::FIXED ? "fixed" : "radius") + "_model_" + model+ "_" + (ZDimension ? "3D" : "2D");
             std::string filename = base + parameters + ".xyz";
             std::ofstream file(filename);
@@ -287,23 +317,4 @@
             std::cout << std::endl;
             file.close();
         }
-    }
-
-
-
-    std::string SwarmModel::format_float(float number) {
-        std::ostringstream out;
-        out << std::fixed << std::setprecision(std::numeric_limits<float>::digits10);
-
-        out << number;
-
-        std::string str = out.str();
-        size_t end = str.find_last_not_of('0') + 1;
-
-        if (str[end - 1] == '.') {
-            end--;
-        }
-
-        str.erase(end, std::string::npos);
-        return str;
     }

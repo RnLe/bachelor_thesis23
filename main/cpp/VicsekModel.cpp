@@ -6,8 +6,11 @@
 #include <cmath>
 #include <random>
 #include <omp.h>
+#include <iostream>
 
     void VicsekModel::update() {
+        // TODO: The particles are updated while being used to update other particles.
+        // Change it to save the new particles in a new, temporary particle vector and overwrite the particles at the end of the for loop
         update_cells();
         #pragma omp parallel for
         for (int i = 0; i < particles.size(); ++i) {
@@ -15,6 +18,7 @@
             std::vector<Particle*> neighbors;
             std::vector<double> distances;
             std::tie(neighbors, distances) = get_neighbors(particle, i);
+            if (mode == SwarmModel::Mode::QUANTILE) std::tie(neighbors, distances) = reduceQuantileNeighbors(particle, i);
             double new_x, new_y, new_z, new_angle, new_polarAngle;
             std::tie(new_x, new_y, new_z, new_angle, new_polarAngle) = get_new_particle_vicsek(particle, neighbors);
             particle.x = new_x;
@@ -26,8 +30,17 @@
         }
     }
 
-    void VicsekModel::writeToFile(int timesteps, std::string filetype, int N, double L, double v, double r, SwarmModel::Mode mode, int k, double noise) {
-        SwarmModel::writeToFile(timesteps, filetype, N, L, v, r, mode, k, noise, "Vicsek");
+    std::pair<std::vector<Particle*>, std::vector<double>> VicsekModel::reduceQuantileNeighbors(Particle& particle, int index) {
+        
+    }
+
+    // This is a wrapper for the get_new_particle_vicsek() method which means over a particle list only, instead of requiring a particle explicitly.
+    std::tuple<double, double, double, double, double> VicsekModel::wrapper_new_particle_vicsek(std::vector<Particle*> neighbors) {
+        if (neighbors.size() == 0) {std::cerr << "Empty list in wrapper_new_particle_vicsek()!"; }
+        // Get the last particle in the list and reduce the list by one, removing the last element.
+        Particle* particle = neighbors.back();
+        neighbors.pop_back();
+        get_new_particle_vicsek(*particle, neighbors);
     }
 
     std::tuple<double, double, double, double, double> VicsekModel::get_new_particle_vicsek(Particle& particle, std::vector<Particle*> neighbors) {
@@ -81,4 +94,8 @@
 
 
         return std::make_tuple(new_x, new_y, new_z, new_angle, new_polarAngle);
+    }
+
+    void VicsekModel::writeToFile(int timesteps, std::string filetype, int N, double L, double v, double r, SwarmModel::Mode mode, int k, double noise) {
+        SwarmModel::writeToFile(timesteps, filetype, N, L, v, r, mode, k, noise, "Vicsek");
     }
