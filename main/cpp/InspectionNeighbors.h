@@ -25,32 +25,25 @@ For small systems, the  number of neighbors is reduced to 4.
 class Inspector {
 public:
     // Constructor
-    Inspector();
+                                                    Inspector                                      ();
 
     // Wrapper for the densitiesVicsekValues() method
-    void runForAllNoiseLevels_Fig2a(bool writeToFile, int timesteps = 5000);
-    void runForAllNoiseLevels_Fig2a_quantile(bool writeToFile, int timesteps = 5000);
-    void runForAllNoiseLevels_Fig2b(bool writeToFile, int timesteps = 5000);
-    void runForAllNoiseLevels_Fig2b_quantile(bool writeToFile, int timesteps = 5000);
+    void                                            runForAllNoiseLevels_Fig2a                     (bool writeToFile, int timesteps = 5000);
+    void                                            runForAllNoiseLevels_Fig2a_quantile            (bool writeToFile, int timesteps = 5000);
+    void                                            runForAllNoiseLevels_Fig2b                     (bool writeToFile, int timesteps = 5000);
+    void                                            runForAllNoiseLevels_Fig2b_quantile            (bool writeToFile, int timesteps = 5000);
     // Function to check the order parameter
-    void equilibrate_va_VicsekValues_2a(bool writeToFile = false, std::string fileNamePrefix = "Fig2a", std::vector<double> noises = {});
-    void equilibrate_va_VicsekValues_2b(bool writeToFile = false, std::string fileNamePrefix = "Fig2a");
+    void                                            equilibrate_va_VicsekValues_2a                 (bool writeToFile = false, std::string fileNamePrefix = "Fig2a", std::vector<double> noises = {});
+    void                                            equilibrate_va_VicsekValues_2b                 (bool writeToFile = false, std::string fileNamePrefix = "Fig2a");
 
 private:
-    std::vector<int> N_densities;
-    std::map<std::string, std::vector<double>> settings;
-    SwarmModel::Mode mode;
-    bool densityNeighbors;
-    bool ZDimension;
-    bool seed;
-    std::vector<double> chosen_settings;
-    int N = 100;
-    double L = 20;
-    double v = 0.03;
-    double noise = 0.2;
-    double r = 1.0;
-    int k_neighbors = 5;
-    int timesteps;
+    bool                                            densityNeighbors, ZDimension, seed;
+    int                                             N = 100, k_neighbors = 5, timesteps;
+    double                                          L = 20, v = 0.03, noise = 0.2, r = 1.0;
+    std::vector<int>                                N_densities;
+    std::vector<double>                             chosen_settings;
+    std::map<std::string, std::vector<double>>      settings;
+    SwarmModel::Mode                                mode;
 };
 
 #endif // INSPECTION_NEIGHBORS_H

@@ -28,7 +28,7 @@ int main() {
     };
 
     // Choose between RADIUS, FIXED and QUANTILE
-    SwarmModel::Mode mode = SwarmModel::Mode::QUANTILE;
+    SwarmModel::Mode mode = SwarmModel::Mode::FIXED;
 
     // Flags
     bool ZDimension = false;     // 2D or 3D
@@ -52,11 +52,11 @@ int main() {
     // PerceptronModel model(N, L, v, noise, r, static_cast<SwarmModel::Mode>(mode), k_neighbors, ZDimension, seed);
 
     // Write to file
-    model.writeToFile(timesteps, "xyz", N=N, L=L, v=v, r=r, mode=mode, k_neighbors, noise);
+    // model.writeToFile(timesteps, "xyz", N=N, L=L, v=v, r=r, mode=mode, k_neighbors, noise);
 
     Inspector inspector;
     // inspector.runForAllNoiseLevels_Fig2b(true, 5000);
-    // inspector.runForAllNoiseLevels_Fig2a_quantile(true, 2000);
+    inspector.runForAllNoiseLevels_Fig2a_quantile(true, 5000);
 
     return 0;
 }

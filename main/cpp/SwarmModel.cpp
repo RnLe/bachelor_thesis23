@@ -226,6 +226,7 @@
             }
 
             if (mode == 1) {
+                std::shuffle(neighbors.begin(), neighbors.end(), gen3);
                 neighbors.resize(k_neighbors + 1);
             } else if (mode == 0) {
                 auto cut_off = std::find_if(distances.begin(), distances.end(), [](double value) { return value >= 1; });

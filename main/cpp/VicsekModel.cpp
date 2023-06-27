@@ -1,6 +1,7 @@
 #include "VicsekModel.h"
 #include "SwarmModel.h"
 #include "Perceptron.h"
+
 #include <vector>
 #include <tuple>
 #include <cmath>
@@ -24,6 +25,7 @@
             if (mode == SwarmModel::Mode::QUANTILE) {
                 std::tie(new_x, new_y, new_z, new_angle, new_polarAngle) = get_new_particle_quantile(particle, neighbors);
             } else {
+
                 std::tie(new_x, new_y, new_z, new_angle, new_polarAngle) = get_new_particle_vicsek(particle, neighbors);
             }
             particle.x = new_x;

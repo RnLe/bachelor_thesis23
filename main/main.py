@@ -114,7 +114,7 @@ if __name__ == "__main__":
         "large": [2000, 50, 0.03, 0.1, 1, 4]      
     }
     N, L, v, noise, r, scale = settings["b"]
-    k_neighbors = 2
+    k_neighbors = 8
     cellSpan = 5 if mode == 1 else 1
     va_values = []
     avg_va_list = []

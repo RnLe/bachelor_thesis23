@@ -1,6 +1,7 @@
 #include "VicsekModel.h"
 #include "PerceptronModel.h"
 #include "Perceptron.h"
+
 #include <vector>
 #include <tuple>
 #include <cmath>
