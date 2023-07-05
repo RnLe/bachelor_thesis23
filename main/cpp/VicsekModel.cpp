@@ -10,31 +10,34 @@
 #include <iostream>
 #include <algorithm>    // for sort() and find_if()
 
+    // Method to update the particles in the model according to the Vicsek model
     void VicsekModel::update() {
-        // TODO: The particles are updated while being used to update other particles.
-        // Change it to save the new particles in a new, temporary particle vector and overwrite the particles at the end of the for loop
         update_cells();
+        // Allocate new vector of particles with same size as old vector
+        std::vector<Particle> new_particles;
+        new_particles.reserve(particles.size());
+        // Loop over all particles
         #pragma omp parallel for
-        for (int i = 0; i < particles.size(); ++i) {
+        for (int i = 0; i < particles.size(); i++) {
+            // Get neighbors of particle i and calculate new position and angle
             Particle& particle = particles[i];
             std::vector<Particle*> neighbors;
             std::vector<double> distances;
             std::tie(neighbors, distances) = get_neighbors(particle, i);
 
             double new_x, new_y, new_z, new_angle, new_polarAngle;
-            if (mode == SwarmModel::Mode::QUANTILE) {
-                std::tie(new_x, new_y, new_z, new_angle, new_polarAngle) = get_new_particle_quantile(particle, neighbors);
-            } else {
+            std::tie(new_x, new_y, new_z, new_angle, new_polarAngle) = get_new_particle_vicsek(particle, neighbors);
 
-                std::tie(new_x, new_y, new_z, new_angle, new_polarAngle) = get_new_particle_vicsek(particle, neighbors);
+            Particle new_particle(new_x, new_y, new_z, new_angle, new_polarAngle, neighbors, distances, particle.cellRange);
+
+            #pragma omp critical
+            {
+                // Add new particle to new vector
+                new_particles.push_back(new_particle);
             }
-            particle.x = new_x;
-            particle.y = new_y;
-            particle.z = ZDimension ? new_z : 0;
-            particle.angle = new_angle;
-            particle.polarAngle = ZDimension ? new_polarAngle : M_PI / 2;
-            particle.k_neighbors = neighbors;
         }
+        // Update the particles with the new particles (to avoid updating the particles in the model while using them)
+        particles = new_particles;
     }
 
     // Method to mean over the angle of a particle list (Only 2D right now)
@@ -42,11 +45,13 @@
         double sin_sum = 0.0;
         double cos_sum = 0.0;
         
+        // Loop over all particles and sum the sin and cos of the angle
         for (const Particle* p : particles) {
             sin_sum += std::sin(p->angle);
             cos_sum += std::cos(p->angle);
         }
 
+        // Calculate the average angle and make sure it is between 0 and 2pi (for visualization purposes)
         double avg_angle = std::atan2(sin_sum / particles.size(), cos_sum / particles.size());
         if (avg_angle < 0) {
             avg_angle += 2 * M_PI;
@@ -137,6 +142,7 @@
         return std::make_tuple(new_x, new_y, new_z, new_angle, new_polarAngle);
     }
 
+    // Method to handle the Vicsek mode
     std::tuple<double, double, double, double, double> VicsekModel::get_new_particle_vicsek(Particle& particle, std::vector<Particle*> neighbors) {
         double sin_sum_azimuth = 0.0;
         double cos_sum_azimuth = 0.0;
@@ -144,6 +150,10 @@
         double cos_sum_polar = 0.0;
         
         for (Particle* p : neighbors) {
+            // Check whether p is nullpointer
+            if (p == nullptr) {
+                continue;
+            }
             sin_sum_azimuth += std::sin(p->angle);
             cos_sum_azimuth += std::cos(p->angle);
             sin_sum_polar += std::sin(p->polarAngle);
@@ -172,7 +182,7 @@
         double new_y;
         double new_z;
 
-        // PBC
+        // PBC (Periodic Boundary Conditions)
         if (ZDimension) {
             new_x = fmod(particle.x + v * std::sin(new_polarAngle) * std::cos(new_angle), L);
             new_y = fmod(particle.y + v * std::sin(new_polarAngle) * std::sin(new_angle), L);
@@ -190,6 +200,6 @@
         return std::make_tuple(new_x, new_y, new_z, new_angle, new_polarAngle);
     }
 
-    void VicsekModel::writeToFile(int timesteps, std::string filetype, int N, double L, double v, double r, SwarmModel::Mode mode, int k, double noise) {
+    void VicsekModel::writeToFile(int timesteps, std::string filetype, int N, double L, double v, double r, Mode mode, int k, double noise) {
         SwarmModel::writeToFile(timesteps, filetype, N, L, v, r, mode, k, noise, "Vicsek");
     }

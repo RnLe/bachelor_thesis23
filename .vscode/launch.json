@@ -8,8 +8,8 @@
       "args": [],
       "stopAtEntry": false,
       "externalConsole": false,
-      "cwd": "/mnt/c/GitHub/bachelor_thesis23/main/cpp",
-      "program": "/mnt/c/GitHub/bachelor_thesis23/main/cpp/build/Debug/outDebug",
+      "cwd": "/mnt/c/GitHub/bachelor_thesis23/main/cpp/tests",
+      "program": "/mnt/c/GitHub/bachelor_thesis23/main/cpp/tests/build/Debug/outDebug",
       "MIMode": "gdb",
       "miDebuggerPath": "gdb",
       "setupCommands": [

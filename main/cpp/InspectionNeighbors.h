@@ -31,7 +31,6 @@ public:
     void                                            runForAllNoiseLevels_Fig2a                     (bool writeToFile, int timesteps = 5000);
     void                                            runForAllNoiseLevels_Fig2a_quantile            (bool writeToFile, int timesteps = 5000);
     void                                            runForAllNoiseLevels_Fig2b                     (bool writeToFile, int timesteps = 5000);
-    void                                            runForAllNoiseLevels_Fig2b_quantile            (bool writeToFile, int timesteps = 5000);
     // Function to check the order parameter
     void                                            equilibrate_va_VicsekValues_2a                 (bool writeToFile = false, std::string fileNamePrefix = "Fig2a", std::vector<double> noises = {});
     void                                            equilibrate_va_VicsekValues_2b                 (bool writeToFile = false, std::string fileNamePrefix = "Fig2a");
@@ -43,7 +42,7 @@ private:
     std::vector<int>                                N_densities;
     std::vector<double>                             chosen_settings;
     std::map<std::string, std::vector<double>>      settings;
-    SwarmModel::Mode                                mode;
+    Mode                                            mode;
 };
 
 #endif // INSPECTION_NEIGHBORS_H

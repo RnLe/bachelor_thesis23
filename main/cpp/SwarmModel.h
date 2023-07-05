@@ -7,9 +7,11 @@
 #include <random>
 #include <string>
 
+enum class Mode {
+    RADIUS, FIXED, QUANTILE, FIXEDRADIUS
+};
 class SwarmModel {
 public:
-    enum Mode { RADIUS, FIXED, QUANTILE };
 
     // Constructor
                                                             SwarmModel                  (int N, double L, double v, double noise, double r, Mode mode,
@@ -21,16 +23,17 @@ public:
     std::vector<double>                                     get_density_hist3D          ();
     std::vector<double>                                     get_dynamic_radius          ();
     std::pair<std::vector<Particle*>, std::vector<double>>  get_neighbors               (Particle& particle, int index);
-    virtual void                                            update                      () = 0;
+    virtual void                                            update                      () {};
     double                                                  mean_direction2D            ();
     std::pair<double, double>                               mean_direction3D            ();
     std::pair<int, std::pair<double, double>>               mean_direction_watcher      (int timeLimit = -1, double tolerance = 1e-6);
     void                                                    writeToFile                 (int timesteps, std::string filetype, int N, double L, double v, double r,
-                                                                                        SwarmModel::Mode mode, int k, double noise, std::string model);
+                                                                                        Mode mode, int k, double noise, std::string model);
 
-protected:
+public:
     // Member variables
-    int                                                     N, mode, k_neighbors, num_cells, cellSpan = 0;
+    int                                                     N, k_neighbors, num_cells, cellSpan = 0;
+    Mode                                                    mode;
     double                                                  L, v, noise, r, density2D, density3D;
     std::vector<Particle>                                   particles;
     std::vector<std::vector<std::vector<std::vector<int>>>> cells3D;

@@ -1,5 +1,5 @@
-CXX = gcc
-CXXFLAGS = -Ofast -std=c++20 -fopenmp
+CXX = g++
+CXXFLAGS = -O0 -std=c++20 -fopenmp -fsanitize=address
 
 SRC_DIR = .
 OBJ_DIR = ./build/Debug

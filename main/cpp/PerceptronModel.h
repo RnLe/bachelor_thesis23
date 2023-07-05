@@ -10,25 +10,31 @@
 #include <random>
 #include <numeric>
 
+// A class to differentiate between different neural network models
+enum class NeuralNetwork {
+    UnitVector
+    // Add further modes if necessary
+};
+
 class PerceptronModel : public VicsekModel {
 public:
     enum LearningMode { UNIFORM, IMITATEVICSEK, MAXIMIZEORDER };
 
     // Parameterized Constructor
                                                     PerceptronModel             (int N, double L, double v, double noise, double r, Mode mode, int k_neighbors, bool ZDimension = false,
-                                                                                bool seed = false, double learning_rate = 0.0001, std::vector<double> weights = std::vector<double>());
+                                                                                bool seed = false, std::vector<double> weights = {}, double lambda_reg = 0.1, double learning_rate = 0.00001, NeuralNetwork neural_network = NeuralNetwork::UnitVector);
 
     // Methods
-    void                                            writeToFile                 (int timesteps, std::string filetype, int N, double L, double v, double r, SwarmModel::Mode mode, int k, double noise);
+    void                                            writeToFile                 (int timesteps, std::string filetype, int N, double L, double v, double r, Mode mode, int k, double noise);
     void                                            learn                       ();
     void                                            update                      () override;
-    std::vector<double>                             neighbors_to_input_vec      (std::vector<Particle*> neighbors, std::vector<double> distances);
-    double                                          compute_error               (Particle& particle, std::vector<Particle*> neighbors, std::vector<double> input_vec);
-    double                                          get_target                  (Particle& particle, std::vector<Particle*> neighbors);
-    double                                          get_prediction              (std::vector<double> input_vec);
+    void                                            update_unitVector           ();
+    std::vector<double>                             neighbors_to_x              (std::vector<Particle*> neighbors, std::vector<double> distances);
+    std::vector<double>                             neighbors_to_y              (std::vector<Particle*> neighbors, std::vector<double> distances);
+    std::vector<double>                             neighbors_to_z              (std::vector<Particle*> neighbors, std::vector<double> distances);
 
-    double                                          learning_rate;
-    Perceptron                                      perceptron;
+    std::vector<Perceptron>                         perceptrons;
+    NeuralNetwork                                   neural_network;
 };
 
 #endif // PERCEPTRONMODEL_H

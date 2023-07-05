@@ -13,7 +13,8 @@
 #include <sstream>
 #include <omp.h>
 
-    // Constructor
+    // Constructors
+    // :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
     SwarmModel::SwarmModel(int N, double L, double v, double noise, double r, Mode mode, int k_neighbors, bool ZDimension, bool seed)
         : N(N), L(L), v(v), noise(noise), r(r), mode(mode), k_neighbors(k_neighbors), density3D(N / (L * L * L)), density2D(N / (L * L)), num_cells(int(L / (2 * r))),
         seed(seed), ZDimension(ZDimension) {
@@ -61,24 +62,30 @@
             mode1_cells.push_back(i);
         }
     }
+    // :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
     // Methods
+    // :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
     void SwarmModel::update_cells() {
+        /*
+        This method iterates through all particles and checks in what cell it is. The corresponding is updated with the ID of the particle.
+        The .size() of a cell can be used to determine how many particles it contains.
+        */
         // Reset cells
         cells3D = std::vector<std::vector<std::vector<std::vector<int>>>>(num_cells, std::vector<std::vector<std::vector<int>>>(num_cells, std::vector<std::vector<int>>(num_cells, std::vector<int>())));
         cells2D = std::vector<std::vector<std::vector<int>>>(num_cells, std::vector<std::vector<int>>(num_cells, std::vector<int>()));
 
         if (ZDimension) {
             for (int i = 0; i < particles.size(); ++i) {
-                int cell_x = int(particles[i].x / r) % num_cells;
-                int cell_y = int(particles[i].y / r) % num_cells;
-                int cell_z = int(particles[i].z / r) % num_cells;
+                int cell_x = int(particles[i].x / (2*r)) % num_cells;
+                int cell_y = int(particles[i].y / (2*r)) % num_cells;
+                int cell_z = int(particles[i].z / (2*r)) % num_cells;
                 cells3D[cell_x][cell_y][cell_z].push_back(i);
             }
         } else {
             for (int i = 0; i < particles.size(); ++i) {
-                int cell_x = int(particles[i].x / r) % num_cells;
-                int cell_y = int(particles[i].y / r) % num_cells;
+                int cell_x = int(particles[i].x / (2*r)) % num_cells;
+                int cell_y = int(particles[i].y / (2*r)) % num_cells;
                 cells2D[cell_x][cell_y].push_back(i);
             }
         }
@@ -111,26 +118,21 @@
         // Case differentiation between radius and fixed number of neighbors
         // If fixed numbers is chosen, effectively let the while loop iterate over every cells (and abort if it has found k neighbors)
         int rangeOfCells = num_cells;
-        if (mode == Mode(RADIUS)) {
-            // Cells are cubes with the side length of a radius. So we only want to iterate over a maximum of 1 cell shell around the radius.
-            // OPTIMIZATION: Detect whether r is close to a whole number. Iterating over the next shell of neighbor cells is very computing intensive.
-            double tolerance = 0.1;
-            double fractional_part = r - int(r);
-            if (fractional_part < tolerance) {
-                rangeOfCells = int(r) + 1;
-            } else {
-                rangeOfCells = int(r) + 2;
-            }
+        if (mode == Mode::RADIUS || mode == Mode::FIXEDRADIUS) {
+            // Cells are cubes with the side length of a radius. So we only want to iterate over a maximum of 2 cell shell around the radius.
+            // Consider that the cell size increases with the radius
+            rangeOfCells = 2;
         }
 
-        int cell_x = int(particle.x / r) % num_cells;;
-        int cell_y = int(particle.y / r) % num_cells;;
-        int cell_z = int(particle.z / r) % num_cells;;
+        int cell_x = int(particle.x / (2*r)) % num_cells;
+        int cell_y = int(particle.y / (2*r)) % num_cells;
+        int cell_z = int(particle.z / (2*r)) % num_cells;
         std::vector<Particle*> neighbors;
         std::vector<double> distances;
         std::vector<int> mode1_cells(cellSpan * 2 + 1);
         std::iota(mode1_cells.begin(), mode1_cells.end(), -cellSpan);
         int boundary = 0;
+        bool breakFlag = false;
 
         if (ZDimension) {
             while (boundary < rangeOfCells) {
@@ -138,75 +140,77 @@
                     for (int dy = -boundary; dy <= boundary; ++dy) {
                         for (int dz = -boundary; dz <= boundary; ++dz) {
                             if (std::abs(dx) != boundary && std::abs(dy) != boundary && std::abs(dz) != boundary) continue;
-                            int neighbor_cell_x = (cell_x + dx + num_cells) % num_cells;
-                            int neighbor_cell_y = (cell_y + dy + num_cells) % num_cells;
-                            int neighbor_cell_z = (cell_y + dz + num_cells) % num_cells;
-
+                            int neighbor_cell_x = (cell_x + dx + num_cells);
+                            bool neighbor_cell_x_shift = (neighbor_cell_x == neighbor_cell_x % num_cells);
+                            neighbor_cell_x %= num_cells;
+                            int neighbor_cell_y = (cell_y + dy + num_cells);
+                            bool neighbor_cell_y_shift = (neighbor_cell_y == neighbor_cell_y % num_cells);
+                            neighbor_cell_y %= num_cells;
+                            int neighbor_cell_z = (cell_z + dz + num_cells);
+                            bool neighbor_cell_z_shift = (neighbor_cell_z == neighbor_cell_z % num_cells);
+                            neighbor_cell_z %= num_cells;
+                            
                             for (int j : cells3D[neighbor_cell_x][neighbor_cell_y][neighbor_cell_z]) {
                                 if (index != j) {
-                                    double distance = std::pow((particle.x - particles[j].x) - L * std::round((particle.x - particles[j].x) / L), 2) +
-                                    std::pow((particle.y - particles[j].y) - L * std::round((particle.y - particles[j].y) / L), 2) +
-                                    std::pow((particle.z - particles[j].z) - L * std::round((particle.z - particles[j].z) / L), 2);
-                                    neighbors.push_back(&particles[j]);
-                                    distances.push_back(distance);
+                                    float px = neighbor_cell_x_shift ? (dx < 0 ? particles[j].x - L : particles[j].x + L) : particles[j].x;
+                                    float py = neighbor_cell_y_shift ? (dy < 0 ? particles[j].y - L : particles[j].y + L) : particles[j].y;
+                                    float pz = neighbor_cell_z_shift ? (dz < 0 ? particles[j].z - L : particles[j].z + L) : particles[j].z;
+                                    double distance = std::pow((particle.x - px) - L * std::round((particle.x - px) / L), 2) +
+                                    std::pow((particle.y - py) - L * std::round((particle.y - py) / L), 2) +
+                                    std::pow((particle.z - pz) - L * std::round((particle.z - pz) / L), 2);
+                                    // If mode==RADIUS or mode==FIXEDRADIUS and distance smaller that radius OR if mode==FIXED (count all neighbors in last layer and sort by distance later)
+                                    if (((mode == Mode::RADIUS || mode == Mode::FIXEDRADIUS) && distance < (r * r)) || mode == Mode::FIXED) {
+                                        neighbors.push_back(&particles[j]);
+                                        distances.push_back(distance);
+                                    }
                                 }
                             }
                         }
                     }
                 }
                 boundary++;
-                if (mode == Mode(FIXED) && neighbors.size() > k_neighbors) break;
+                // Use a break flag here to let the loop iterate one more time.
+                // A particle at a boundary of a cell needs to check the neighboring cells, regardless of how many particles it has found in its own cell
+                if (breakFlag == true) break;
+                if (mode == Mode::FIXED && neighbors.size() > k_neighbors) breakFlag = true;
             }
-        } else {
+        }
+        else {
             while (boundary < rangeOfCells) {
                 for (int dx = -boundary; dx <= boundary; ++dx) {
                     for (int dy = -boundary; dy <= boundary; ++dy) {
                         if (std::abs(dx) != boundary && std::abs(dy) != boundary) continue;
-                        int neighbor_cell_x = (cell_x + dx + num_cells) % num_cells;
-                        int neighbor_cell_y = (cell_y + dy + num_cells) % num_cells;
+                        // For the correct distance measurement it's important to detect a cell shift
+                        int neighbor_cell_x = (cell_x + dx + num_cells);
+                        bool neighbor_cell_x_shift = (neighbor_cell_x == neighbor_cell_x % num_cells);
+                        neighbor_cell_x %= num_cells;
+                        int neighbor_cell_y = (cell_y + dy + num_cells);
+                        bool neighbor_cell_y_shift = (neighbor_cell_y == neighbor_cell_y % num_cells);
+                        neighbor_cell_y %= num_cells;
                         
                         for (int j : cells2D[neighbor_cell_x][neighbor_cell_y]) {
                             if (index != j) {
-                                double distance = std::pow((particle.x - particles[j].x) - L * std::round((particle.x - particles[j].x) / L), 2) +
-                                std::pow((particle.y - particles[j].y) - L * std::round((particle.y - particles[j].y) / L), 2);
-                                // If mode==radius and distance smaller that radius OR if mode==fixed (count all neighbors in last layer and sort by distance later)
-                                if ((mode == 0 && distance < (r * r)) || mode == 1) {
+                                // Check whether a cell shift was made or not
+                                float px = neighbor_cell_x_shift ? (dx < 0 ? particles[j].x - L : particles[j].x + L) : particles[j].x;
+                                float py = neighbor_cell_y_shift ? (dy < 0 ? particles[j].y - L : particles[j].y + L) : particles[j].y;
+                                double distance = std::pow((particle.x - px) - L * std::round((particle.x - px) / L), 2) +
+                                std::pow((particle.y - py) - L * std::round((particle.y - py) / L), 2);
+                                // If mode==RADIUS or mode==RADIUSFIXED and distance smaller that radius OR if mode==FIXED (count all neighbors in last layer and sort by distance later)
+                                if (((mode == Mode::RADIUS || mode == Mode::FIXEDRADIUS) && distance < (r * r)) || mode == Mode::FIXED) {
                                     neighbors.push_back(&particles[j]);
                                     distances.push_back(distance);
-                                }       
+                                }      
                             }
                         }
                     }
                 }
                 boundary++;
-                if (mode == Mode(FIXED) && neighbors.size() > k_neighbors) break;
+                // Use a break flag here to let the loop iterate one more time.
+                // A particle at a boundary of a cell needs to check the neighboring cells, regardless of how many particles it has found in its own cell
+                if (breakFlag == true) break;
+                if (mode == Mode::FIXED && neighbors.size() > k_neighbors) breakFlag = true;
             }
         }
-        
-        
-
-        // // Parallelization might lead to more neighbors in the list than desired.
-        // // Additional check to truncate the neighors.
-        // if(neighbors.size() > k_neighbors) {
-        //     // Get the indices of the k_neighbors smallest elements in 'distances'
-        //     std::vector<size_t> indices(distances.size());
-        //     std::iota(indices.begin(), indices.end(), 0);  // Fill with 0, 1, ..., distances.size() - 1
-        //     std::partial_sort(indices.begin(), indices.begin() + k_neighbors, indices.end(),
-        //                     [&distances](size_t i1, size_t i2) { return distances[i1] < distances[i2]; });
-        //     indices.resize(k_neighbors);  // Only keep the first k_neighbors indices
-
-        //     // Construct new 'neighbors' and 'distances' vectors with only the closest neighbors
-        //     std::vector<Particle*> new_neighbors(k_neighbors);
-        //     std::vector<double> new_distances(k_neighbors);
-        //     for(size_t i = 0; i < k_neighbors; ++i) {
-        //         new_neighbors[i] = neighbors[indices[i]];
-        //         new_distances[i] = distances[indices[i]];
-        //     }
-
-        //     // Replace 'neighbors' and 'distances' with their new versions
-        //     neighbors = std::move(new_neighbors);
-        //     distances = std::move(new_distances);
-        // }
 
         particle.cellRange = boundary - 1;
 
@@ -216,7 +220,9 @@
         if (neighbors.size() > 1) {
             std::vector<std::pair<Particle*, double>> pairs;
             for (int i = 0; i < neighbors.size(); ++i) pairs.push_back(std::make_pair(neighbors[i], distances[i]));
-            std::sort(pairs.begin(), pairs.end(), [](auto& left, auto& right) { return left.second < right.second; });
+            // std::sort(pairs.begin(), pairs.end(), [](auto& left, auto& right) { return left.second < right.second; });
+            // Rewrite this for use with std=c++11
+            std::sort(pairs.begin(), pairs.end(), [](std::pair<Particle*, double> left, std::pair<Particle*, double> right) { return left.second < right.second; });
 
             neighbors.clear();
             distances.clear();
@@ -225,13 +231,41 @@
                 distances.push_back(pair.second);
             }
 
-            if (mode == 1) {
-                std::shuffle(neighbors.begin(), neighbors.end(), gen3);
-                neighbors.resize(k_neighbors + 1);
-            } else if (mode == 0) {
-                auto cut_off = std::find_if(distances.begin(), distances.end(), [](double value) { return value >= 1; });
-                if (cut_off != distances.end()) neighbors.resize(std::distance(distances.begin(), cut_off));
+            switch (mode) {
+                case Mode::FIXED: {
+                    neighbors.resize(k_neighbors + 1);
+                    break;
+                }
+                case Mode::RADIUS: {
+                    auto cut_off = std::find_if(distances.begin(), distances.end(), [](double value) { return value >= 1; });
+                    if (cut_off != distances.end()) neighbors.resize(std::distance(distances.begin(), cut_off));
+                    break;
+                }
+                case Mode::FIXEDRADIUS: {
+                    // Shuffle neighbors and distances in the same manner
+                    std::vector<int> indices(neighbors.size());
+                    // Fill indices with 0, 1, 2, ..., neighbors.size() - 1
+                    std::iota(indices.begin(), indices.end(), 0);
+                    std::shuffle(indices.begin(), indices.end(), gen3);
+                    std::vector<Particle*> neighbors_copy(neighbors.size());
+                    std::vector<double> distances_copy(distances.size());
+                    // Add self to neighbors and distances
+                    neighbors_copy[0] = neighbors[0];
+                    distances_copy[0] = distances[0];
+                    // Consequently, the first element of indices is 1
+                    for (int i = 1; i < neighbors.size(); ++i) {
+                        neighbors_copy[i] = neighbors[indices[i]];
+                        distances_copy[i] = distances[indices[i]];
+                    }
+                    neighbors = neighbors_copy;
+                    distances = distances_copy;
+
+                    neighbors.resize(k_neighbors + 1);
+                    distances.resize(k_neighbors + 1);
+                    break;
+                }
             }
+            
         }
 
         return std::make_pair(neighbors, distances);
@@ -273,44 +307,74 @@
         int timeStep = 0;
         double difference = 0.0;
 
+        std::vector<double> lastFivePercent;
+        int fivePercent = timeLimit * 0.05;
+
         while (timeLimit == -1 || timeStep < timeLimit) {
             update();  // perform a simulation step
             if (ZDimension) {
                 auto dir3D = mean_direction3D();
-                current = std::hypot(dir3D.first, dir3D.second);  // hypot might not be the best measure here, adapt as needed later
+                current = std::hypot(dir3D.first, dir3D.second);
             } else {
                 current = mean_direction2D();
             }
-            difference = std::abs(current - previous1);
-            if (timeStep > 1 && std::abs(previous1 - previous2) < tolerance && difference < tolerance) {
-                break;  // exit loop if the changes in order parameter are smaller than the tolerance for the last two steps
-            }
+
             previous2 = previous1;
             previous1 = current;
             timeStep++;
 
+            // Average over the last 5% of timesteps
+            if (timeStep > timeLimit - fivePercent) {
+                lastFivePercent.push_back(current);
+            }
+
             // Print progress and difference to the previous value
-            std::cout << "\033[1;32mEquilibrating: " << N << " particles at t = " << timeStep << ", va = " << current << ", difference to previous = " << difference << "\033[0m\r";
+            std::cout << "\033[1;32mEquilibrating: " << N << " particles at t = " << timeStep << ", va = " << current << "\033[0m\r";
             std::cout.flush();
         }
-        return std::make_pair(timeStep, std::make_pair(current, previous2));
+
+        // Calculate mean
+        double mean = std::accumulate(lastFivePercent.begin(), lastFivePercent.end(), 0.0) / lastFivePercent.size();
+        return std::make_pair(timeStep, std::make_pair(mean, previous2));
     }
 
 
-    void SwarmModel::writeToFile(int timesteps, std::string filetype, int N, double L, double v, double r, SwarmModel::Mode mode, int k, double noise, std::string model) {
+
+    void SwarmModel::writeToFile(int timesteps, std::string filetype, int N, double L, double v, double r, Mode mode, int k, double noise, std::string model) {
         if (filetype == "xyz") {
             std::string modus;   
-            if (mode == SwarmModel::Mode::FIXED) {
+            if (mode == Mode::FIXED) {
                 modus = "kNeighbors";
             }
-            else if (mode == SwarmModel::Mode::RADIUS) {
+            else if (mode == Mode::RADIUS) {
                 modus = "rRadius";
             }
-            else if (mode == SwarmModel::Mode::QUANTILE) {
+            else if (mode == Mode::QUANTILE) {
                 modus = "kQuantiles";
             }
+            else if (mode == Mode::FIXEDRADIUS) {
+                modus = "kFixedRadius";
+            }
             std::string base = "../../data/particles_";
-            std::string radiusOrK = mode == (SwarmModel::Mode::FIXED or SwarmModel::Mode::QUANTILE) ? "_k" + helperFunctions::format_float(k) : "_r" + helperFunctions::format_float(r);
+            std::string radiusOrK;
+            switch (mode)
+            {
+            case Mode::FIXED:
+                radiusOrK = "_k" + std::to_string(k);
+                break;
+            case Mode::RADIUS:
+                radiusOrK = "_r" + helperFunctions::format_float(r);
+                break;
+            case Mode::QUANTILE:
+                radiusOrK = "_k" + std::to_string(k);
+                break;
+            case Mode::FIXEDRADIUS:
+                radiusOrK = "_r" + helperFunctions::format_float(r) + "_k" + std::to_string(k);
+                break;
+            default:
+                radiusOrK = "_k" + std::to_string(k);
+                break;
+            }
             std::string parameters = "t" + std::to_string(timesteps) + "_N" + std::to_string(N) + "_L" + helperFunctions::format_float(L) + "_v" + helperFunctions::format_float(v) + "_n" + helperFunctions::format_float(noise)
             + radiusOrK + "_mode_" + modus + "_model_" + model+ "_" + (ZDimension ? "3D" : "2D");
             std::string filename = base + parameters + ".xyz";
@@ -329,3 +393,4 @@
             file.close();
         }
     }
+    // :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::

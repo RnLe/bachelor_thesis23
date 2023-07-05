@@ -12,7 +12,7 @@ Inspector::Inspector() {
 
     // Hyperparameters
     // Choose between RADIUS and FIXED
-    mode = SwarmModel::Mode::FIXED;
+    mode = Mode::FIXED;
 
     // Flags
     densityNeighbors = true;   // Figure 2b of Vicsek model
@@ -33,12 +33,11 @@ void Inspector::runForAllNoiseLevels_Fig2b(bool writeToFile, int timesteps) {
         {"Densities0.5", {          20,     20,     0.03,   0.5,    1,  4}},
         {"Densities0.75", {         20,     20,     0.03,   0.75,    1,  4}},
         {"Densities1.0", {          20,     20,     0.03,   1.0,    1,  4}},
-        {"Densities1.25", {         20,     20,     0.03,   1.25,    1,  4}},
         {"Densities1.5", {          20,     20,     0.03,   1.5,    1,  4}},
         {"Densities2.0", {          20,     20,     0.03,   2.0,    1,  4}}
     };
 
-    std::vector<int> ks = {3, 4, 5, 6, 7, 8, 9, 10};
+    std::vector<int> ks = {3, 4, 5, 6, 7, 8};
 
     for (int k : ks){
         for (auto& setting : settings) {
@@ -50,7 +49,7 @@ void Inspector::runForAllNoiseLevels_Fig2b(bool writeToFile, int timesteps) {
             r = chosen_settings[4];
             k_neighbors = k;
         
-            std::string modus = (mode == SwarmModel::Mode::FIXED ? "kNeighbors" : "rRadius");
+            std::string modus = (mode == Mode::FIXED ? "kNeighbors" : "rRadius");
             std::cout << "\033[1;32m\nWriting file for " << modus << " n=" << helperFunctions::format_float(noise) << " k=" << std::to_string(k_neighbors) << " t=" << std::to_string(timesteps) << "\033[0m\n";
             equilibrate_va_VicsekValues_2b(writeToFile, "Fig2b");
         }
@@ -68,24 +67,24 @@ void Inspector::runForAllNoiseLevels_Fig2a(bool writeToFile, int timesteps) {
         {"BaseNoiseAnalysis40", {       40,     3.1,    0.03,   0.1,    1,  4}},
         {"BaseNoiseAnalysis100", {      100,    5,      0.03,   0.1,    1,  4}},
         {"BaseNoiseAnalysis400", {      400,    10,     0.03,   0.1,    1,  4}},
-        {"BaseNoiseAnalysis1600", {     1600,   20,     0.03,   0.1,    1,  4}},
-        {"BaseNoiseAnalysis4000", {     4000,   31.6,   0.03,   0.1,    1,  4}}
+        {"BaseNoiseAnalysis1600", {     1600,   20,     0.03,   0.1,    1,  4}}
+        //{"BaseNoiseAnalysis4000", {     4000,   31.6,   0.03,   0.1,    1,  4}}
     };
 
-    std::vector<int> ks = {3, 4, 5, 6, 7, 8, 9, 10};
+    std::vector<int> ks = {3, 4, 5, 6, 7, 8};
     std::vector<double> noises = helperFunctions::linspace(0., 5., 50);
 
     for (int k : ks){
         k_neighbors = k;
         std::string modus;   
         
-        if (mode == SwarmModel::Mode::FIXED) {
+        if (mode == Mode::FIXED) {
             modus = "kNeighbors";
         }
-        else if (mode == SwarmModel::Mode::RADIUS) {
+        else if (mode == Mode::RADIUS) {
             modus = "rRadius";
         }
-        else if (mode == SwarmModel::Mode::QUANTILE) {
+        else if (mode == Mode::QUANTILE) {
             modus = "kQuantiles";
         }
         
@@ -95,7 +94,7 @@ void Inspector::runForAllNoiseLevels_Fig2a(bool writeToFile, int timesteps) {
 }
 
 void Inspector::runForAllNoiseLevels_Fig2a_quantile(bool writeToFile, int timesteps) {
-    this->mode = SwarmModel::Mode::QUANTILE;
+    this->mode = Mode::QUANTILE;
     runForAllNoiseLevels_Fig2a(writeToFile, timesteps);
 }
 
@@ -105,13 +104,13 @@ void Inspector::equilibrate_va_VicsekValues_2b(bool writeToFile, std::string fil
     std::ofstream outFile;
     if (writeToFile) {
         std::string modus;   
-        if (mode == SwarmModel::Mode::FIXED) {
+        if (mode == Mode::FIXED) {
             modus = "kNeighbors";
         }
-        else if (mode == SwarmModel::Mode::RADIUS) {
+        else if (mode == Mode::RADIUS) {
             modus = "rRadius";
         }
-        else if (mode == SwarmModel::Mode::QUANTILE) {
+        else if (mode == Mode::QUANTILE) {
             modus = "kQuantiles";
         }
 
@@ -126,9 +125,9 @@ void Inspector::equilibrate_va_VicsekValues_2b(bool writeToFile, std::string fil
     }
 
     for (int n : N_densities) {
-        VicsekModel model(n, L, v, noise, r, static_cast<SwarmModel::Mode>(mode), k_neighbors, ZDimension, seed);
+        VicsekModel model(n, L, v, noise, r, static_cast<Mode>(mode), k_neighbors, ZDimension, seed);
         auto time_va = model.mean_direction_watcher(timesteps);
-        std::cout << "Equilibrated for " << n << " particles after " << time_va.first << " timesteps; va = " << time_va.second.first << " , difference to previous = " << std::abs(time_va.second.second - time_va.second.first) << "\n";
+        std::cout << "Equilibrated for " << n << " particles after " << time_va.first << " timesteps; va = " << time_va.second.first << "\n";
         
         // Write to file if flag is set
         if (writeToFile) {
@@ -147,13 +146,13 @@ void Inspector::equilibrate_va_VicsekValues_2a(bool writeToFile, std::string fil
     // Open file if writeToFile is true
     std::ofstream outFile;
     std::string modus;   
-    if (mode == SwarmModel::Mode::FIXED) {
+    if (mode == Mode::FIXED) {
         modus = "kNeighbors";
     }
-    else if (mode == SwarmModel::Mode::RADIUS) {
+    else if (mode == Mode::RADIUS) {
         modus = "rRadius";
     }
-    else if (mode == SwarmModel::Mode::QUANTILE) {
+    else if (mode == Mode::QUANTILE) {
         modus = "kQuantiles";
     }
     if (writeToFile) {
@@ -175,9 +174,9 @@ void Inspector::equilibrate_va_VicsekValues_2a(bool writeToFile, std::string fil
         r = chosen_settings[4];
         std::cout << "\033[1;32m\nSetting: " << N << " particles, L=" << L << "\033[0m\n";
         for (double noise_ : noises) {
-            VicsekModel model(N, L, v, noise_, r, static_cast<SwarmModel::Mode>(mode), k_neighbors, ZDimension, seed);
+            VicsekModel model(N, L, v, noise_, r, static_cast<Mode>(mode), k_neighbors, ZDimension, seed);
             auto time_va = model.mean_direction_watcher(timesteps);
-            std::cout << "Equilibrated for " << N << " particles, L=" << L << " with n = " << helperFunctions::format_float(noise_) << " after " << time_va.first << " timesteps; va = " << time_va.second.first << " , difference to previous = " << std::abs(time_va.second.second - time_va.second.first) << "\n";
+            std::cout << "Equilibrated for " << N << " particles, L=" << L << " with n = " << helperFunctions::format_float(noise_) << " after " << time_va.first << " timesteps; va = " << time_va.second.first << "\n";
             
             // Write to file if flag is set
             if (writeToFile) {
