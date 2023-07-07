@@ -30,17 +30,17 @@ int main() {
     };
 
     // Choose between RADIUS, FIXED and QUANTILE
-    Mode mode = Mode::FIXEDRADIUS;
+    Mode mode = Mode::FIXED;
 
     // Flags
     bool ZDimension = false;     // 2D or 3D
     bool seed = true;            // Whether to use a seed for reproducability
 
     // Duration of simulation
-    int timesteps = 5000;
+    int timesteps = 2000;
 
     // Choose settings
-    std::vector<double> chosen_settings = settings["Xlarge"];
+    std::vector<double> chosen_settings = settings["large"];
     int     N       = chosen_settings[0];
     double  L       = chosen_settings[1];
     double  v       = chosen_settings[2];
@@ -49,7 +49,7 @@ int main() {
     // Calculate exchange radius from density; (N / L^2) * r^2
     // Example for N = 5000, L = 60, r = 1; 
     double  k       = (N * r * r) / (L * L);
-    int     k_neighbors = 10;
+    int     k_neighbors = int(k) + 1;
 
 
     // Create model

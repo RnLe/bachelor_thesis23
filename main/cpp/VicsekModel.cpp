@@ -13,9 +13,10 @@
     // Method to update the particles in the model according to the Vicsek model
     void VicsekModel::update() {
         update_cells();
-        // Allocate new vector of particles with same size as old vector
-        std::vector<Particle> new_particles;
-        new_particles.reserve(particles.size());
+        // Make a deep copy of the particles vector
+        // This ensures that the order of the particles does not change while updating
+        std::vector<Particle> new_particles = particles;
+
         // Loop over all particles
         #pragma omp parallel for
         for (int i = 0; i < particles.size(); i++) {
@@ -23,19 +24,22 @@
             Particle& particle = particles[i];
             std::vector<Particle*> neighbors;
             std::vector<double> distances;
-            std::tie(neighbors, distances) = get_neighbors(particle, i);
+            std::tie(neighbors, distances) = get_neighbors(particle, i);    // In this method, the particle.cellRange is changed
 
             double new_x, new_y, new_z, new_angle, new_polarAngle;
             std::tie(new_x, new_y, new_z, new_angle, new_polarAngle) = get_new_particle_vicsek(particle, neighbors);
 
-            Particle new_particle(new_x, new_y, new_z, new_angle, new_polarAngle, neighbors, distances, particle.cellRange);
-
-            #pragma omp critical
-            {
-                // Add new particle to new vector
-                new_particles.push_back(new_particle);
-            }
+            // Update the new particle
+            new_particles[i].x = new_x;
+            new_particles[i].y = new_y;
+            new_particles[i].z = new_z;
+            new_particles[i].angle = new_angle;
+            new_particles[i].polarAngle = new_polarAngle;
+            new_particles[i].k_neighbors = neighbors;
+            new_particles[i].distances = distances;
+            new_particles[i].cellRange = particle.cellRange;
         }
+
         // Update the particles with the new particles (to avoid updating the particles in the model while using them)
         particles = new_particles;
     }

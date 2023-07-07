@@ -64,7 +64,7 @@ r       = chosen_settings[4]
 # Calculate exchange radius from density; (N / L^2) * r^2
 # Example for N = 5000, L = 60, r = 1;
 k       = (N * r * r) / (L * L)
-k_neighbors = 5
+k_neighbors = int(k) + 1
 
 # Create model
 model = VicsekModel(N, L, v, noise, r, mode, k_neighbors, ZDimension, seed=True)

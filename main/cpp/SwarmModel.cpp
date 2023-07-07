@@ -389,7 +389,10 @@
                 std::cout.flush();
                 update();
             }
-            std::cout << std::endl;
+            // Clear last line in console
+            std::cout << "\033[2K";
+            // Print 100% progress
+            std::cout << "\033[1;32mProgress: 100%\033[0m\n";
             file.close();
         }
     }
