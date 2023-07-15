@@ -28,8 +28,9 @@ public:
                                                     Inspector                                      ();
 
     // Wrapper for the densitiesVicsekValues() method
+    void                                            runForAllNoiseLevelsAndModes_Fig2b             (bool writeToFile, int timesteps = 5000);
+    void                                            runForAllNoiseLevelsAndModes_Fig2a             (bool writeToFile, int timesteps = 5000);
     void                                            runForAllNoiseLevels_Fig2a                     (bool writeToFile, int timesteps = 5000);
-    void                                            runForAllNoiseLevels_Fig2a_quantile            (bool writeToFile, int timesteps = 5000);
     void                                            runForAllNoiseLevels_Fig2b                     (bool writeToFile, int timesteps = 5000);
     // Function to check the order parameter
     void                                            equilibrate_va_VicsekValues_2a                 (bool writeToFile = false, std::string fileNamePrefix = "Fig2a", std::vector<double> noises = {});

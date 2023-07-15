@@ -2,6 +2,7 @@
 #define SWARM_MODEL_H
 
 #include "Particle.h"
+#include "LCG.h"
 
 #include <vector>
 #include <random>
@@ -32,7 +33,7 @@ public:
 
 public:
     // Member variables
-    int                                                     N, k_neighbors, num_cells, cellSpan = 0;
+    int                                                     N, k_neighbors, num_cells, cellSpan = 0, k_reserve;
     Mode                                                    mode;
     double                                                  L, v, noise, r, density2D, density3D;
     std::vector<Particle>                                   particles;
@@ -44,8 +45,11 @@ public:
     unsigned int                                            seed2 = 456789123; // Seed for 2nd generator
     unsigned int                                            seed3 = 789123456; // Seed for 3rd generator
 
-    // Toggle seed manually - seed flag
-    bool                                                    seed, ZDimension;
+    // Toggle seed and random generator manually - seed flag
+    bool                                                    seed, ZDimension, lcg = true;
+
+    // Random generators
+    LCG                                                     lcg1;
 
     std::mt19937                                            gen1;
     std::mt19937                                            gen2;

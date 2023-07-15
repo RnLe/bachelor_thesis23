@@ -1,11 +1,13 @@
 #include <pybind11/pybind11.h>
 #include "../Particle.h"
+#include "../LCG.h"
 #include "../Perceptron.h"
 #include "../helperFunctions.h"
 #include "../SwarmModel.h"
 #include "../VicsekModel.h"
 #include "../PerceptronModel.h"
 #include "../InspectionNeighbors.h"
+#include "../NeuralSwarmModel.h"
 
 // Automatic conversion headers
 #include <pybind11/stl.h>
@@ -100,7 +102,6 @@ PYBIND11_MODULE(Solver, m) {
         .def("update", &VicsekModel::update)
         .def("average_angle_particles", &VicsekModel::average_angle_particles)
         .def("average_angle", &VicsekModel::average_angle)
-        .def("get_new_particle_quantile", &VicsekModel::get_new_particle_quantile)
         .def("get_new_particle_vicsek", &VicsekModel::get_new_particle_vicsek)
         .def("writeToFile", &VicsekModel::writeToFile);
 
@@ -122,9 +123,22 @@ PYBIND11_MODULE(Solver, m) {
     py::class_<Inspector>(m, "Inspector")
         .def(py::init<>())
         .def("runForAllNoiseLevels_Fig2a", &Inspector::runForAllNoiseLevels_Fig2a)
-        .def("runForAllNoiseLevels_Fig2a_quantile", &Inspector::runForAllNoiseLevels_Fig2a_quantile)
         .def("runForAllNoiseLevels_Fig2b", &Inspector::runForAllNoiseLevels_Fig2b)
         .def("equilibrate_va_VicsekValues_2a", &Inspector::equilibrate_va_VicsekValues_2a)
         .def("equilibrate_va_VicsekValues_2b", &Inspector::equilibrate_va_VicsekValues_2b);
 
+    // NeuralSwarmModel
+    py::class_<NeuralSwarmModel, SwarmModel>(m, "NeuralSwarmModel")
+        .def(   py::init<int, double, double, double, double, Mode, int, bool, bool>(),
+                py::arg("N"), py::arg("L"), py::arg("v"), py::arg("noise"), py::arg("r"), py::arg("mode"), py::arg("k_neighbors"), py::arg("ZDimension") = false, py::arg("seed") = false)
+        .def("update", &NeuralSwarmModel::update)
+        .def("get_all_neighbors", &NeuralSwarmModel::get_all_neighbors)
+        .def("update_angles", &NeuralSwarmModel::update_angles);
+
+    // LCG
+    py::class_<LCG>(m, "LCG")
+        .def(   py::init<ulli, ulli, ulli, ulli>(),
+                py::arg("seed"), py::arg("a"), py::arg("c"), py::arg("m"))
+        .def(   py::init<>())
+        .def("random_f", &LCG::random_f);
 }

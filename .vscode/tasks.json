@@ -9,6 +9,7 @@
                 "-g",
                 "${workspaceFolder}/main/cpp/Perceptron.cpp",
                 "${workspaceFolder}/main/cpp/PerceptronModel.cpp",
+                "${workspaceFolder}/main/cpp/NeuralSwarmModel.cpp",
                 "${workspaceFolder}/main/cpp/SwarmModel.cpp",
                 "${workspaceFolder}/main/cpp/VicsekModel.cpp",
                 "${workspaceFolder}/main/cpp/helperFunctions.cpp",

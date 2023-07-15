@@ -2,4 +2,4 @@ appmap_dir: tmp/appmap
 language: python
 name: python
 packages:
-- path: python
+- path: old

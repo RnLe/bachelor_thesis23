@@ -18,7 +18,6 @@ public:
 
     double                                              average_angle_particles     (const std::vector<Particle*>& particles);
     double                                              average_angle               (std::vector<double> angles);
-    std::tuple<double, double, double, double, double>  get_new_particle_quantile   (Particle& particle, std::vector<Particle*> neighbors);
     std::tuple<double, double, double, double, double>  get_new_particle_vicsek     (Particle& particle, std::vector<Particle*> neighbors);
 
     void                                                writeToFile                 (int timesteps, std::string filetype, int N, double L, double v, double r, Mode mode, int k, double noise);

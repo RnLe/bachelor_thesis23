@@ -61,6 +61,8 @@
         for (int i = -cellSpan; i <= cellSpan; ++i) {
             mode1_cells.push_back(i);
         }
+
+        k_reserve = int(mode == Mode::FIXED ? 2 * k_neighbors : 2 * (N * r * r) / (L * L));
     }
     // :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
@@ -117,7 +119,7 @@
     std::pair<std::vector<Particle*>, std::vector<double>> SwarmModel::get_neighbors(Particle& particle, int index) {
         // Case differentiation between radius and fixed number of neighbors
         // If fixed numbers is chosen, effectively let the while loop iterate over every cells (and abort if it has found k neighbors)
-        int rangeOfCells = num_cells;
+        int rangeOfCells = floor(num_cells / 2.0);
         if (mode == Mode::RADIUS || mode == Mode::FIXEDRADIUS) {
             // Cells are cubes with the side length of a radius. So we only want to iterate over a maximum of 2 cell shell around the radius.
             // Consider that the cell size increases with the radius
@@ -129,6 +131,11 @@
         int cell_z = int(particle.z / (2*r)) % num_cells;
         std::vector<Particle*> neighbors;
         std::vector<double> distances;
+        // Allocate space for the maximum number of neighbors (case differentiation between modes)
+        // If mode==FIXED, reserve 2k neighbors
+        // If mode==RADIUS or mode==FIXEDRADIUS, reserve k = 2 * (N * r * r) / (L * L) (Twice the average number of neighbors)
+        neighbors.reserve(k_reserve);
+        distances.reserve(k_reserve);
         std::vector<int> mode1_cells(cellSpan * 2 + 1);
         std::iota(mode1_cells.begin(), mode1_cells.end(), -cellSpan);
         int boundary = 0;
@@ -149,7 +156,7 @@
                             int neighbor_cell_z = (cell_z + dz + num_cells);
                             bool neighbor_cell_z_shift = (neighbor_cell_z == neighbor_cell_z % num_cells);
                             neighbor_cell_z %= num_cells;
-                            
+
                             for (int j : cells3D[neighbor_cell_x][neighbor_cell_y][neighbor_cell_z]) {
                                 if (index != j) {
                                     float px = neighbor_cell_x_shift ? (dx < 0 ? particles[j].x - L : particles[j].x + L) : particles[j].x;
@@ -187,7 +194,7 @@
                         int neighbor_cell_y = (cell_y + dy + num_cells);
                         bool neighbor_cell_y_shift = (neighbor_cell_y == neighbor_cell_y % num_cells);
                         neighbor_cell_y %= num_cells;
-                        
+
                         for (int j : cells2D[neighbor_cell_x][neighbor_cell_y]) {
                             if (index != j) {
                                 // Check whether a cell shift was made or not
@@ -199,7 +206,7 @@
                                 if (((mode == Mode::RADIUS || mode == Mode::FIXEDRADIUS) && distance < (r * r)) || mode == Mode::FIXED) {
                                     neighbors.push_back(&particles[j]);
                                     distances.push_back(distance);
-                                }      
+                                }
                             }
                         }
                     }
@@ -217,18 +224,16 @@
         neighbors.push_back(&particle);
         distances.push_back(0);
 
-        if (neighbors.size() > 1) {
-            std::vector<std::pair<Particle*, double>> pairs;
-            for (int i = 0; i < neighbors.size(); ++i) pairs.push_back(std::make_pair(neighbors[i], distances[i]));
-            // std::sort(pairs.begin(), pairs.end(), [](auto& left, auto& right) { return left.second < right.second; });
-            // Rewrite this for use with std=c++11
-            std::sort(pairs.begin(), pairs.end(), [](std::pair<Particle*, double> left, std::pair<Particle*, double> right) { return left.second < right.second; });
-
-            neighbors.clear();
-            distances.clear();
-            for (auto& pair : pairs) {
-                neighbors.push_back(pair.first);
-                distances.push_back(pair.second);
+        if (neighbors.size() > 2) {
+            // Instead of creating and sorting a vector of pairs, use the temporary vectors and push the elements back in the correct order
+            // Sort neighbors by distance
+            for (int i = 0; i < neighbors.size() - 1; ++i) {
+                for (int j = i + 1; j < neighbors.size(); ++j) {
+                    if (distances[i] > distances[j]) {
+                        std::swap(neighbors[i], neighbors[j]);
+                        std::swap(distances[i], distances[j]);
+                    }
+                }
             }
 
             switch (mode) {
@@ -237,35 +242,40 @@
                     break;
                 }
                 case Mode::RADIUS: {
-                    auto cut_off = std::find_if(distances.begin(), distances.end(), [](double value) { return value >= 1; });
-                    if (cut_off != distances.end()) neighbors.resize(std::distance(distances.begin(), cut_off));
                     break;
                 }
                 case Mode::FIXEDRADIUS: {
-                    // Shuffle neighbors and distances in the same manner
-                    std::vector<int> indices(neighbors.size());
-                    // Fill indices with 0, 1, 2, ..., neighbors.size() - 1
-                    std::iota(indices.begin(), indices.end(), 0);
-                    std::shuffle(indices.begin(), indices.end(), gen3);
-                    std::vector<Particle*> neighbors_copy(neighbors.size());
-                    std::vector<double> distances_copy(distances.size());
-                    // Add self to neighbors and distances
-                    neighbors_copy[0] = neighbors[0];
-                    distances_copy[0] = distances[0];
-                    // Consequently, the first element of indices is 1
-                    for (int i = 1; i < neighbors.size(); ++i) {
-                        neighbors_copy[i] = neighbors[indices[i]];
-                        distances_copy[i] = distances[indices[i]];
-                    }
-                    neighbors = neighbors_copy;
-                    distances = distances_copy;
+                    // Shuffle only if the number of neighbors is larger than k_neighbors
+                    if (neighbors.size() > k_neighbors + 1) {
+                        std::vector<Particle*> neighbors_copy(k_neighbors + 1);
+                        std::vector<double> distances_copy(k_neighbors + 1 );
+                        // Add self to neighbors and distances
+                        neighbors_copy[0] = neighbors[0];
+                        distances_copy[0] = distances[0];
+                        // Remove self from neighbors and distances
+                        neighbors.erase(neighbors.begin());
+                        distances.erase(distances.begin());
+                        // Shuffle neighbors and distances in the same manner
+                        std::vector<int> indices(neighbors.size());
+                        // Fill indices with 0, 1, 2, ..., neighbors.size() - 1
+                        std::iota(indices.begin(), indices.end(), 0);
+                        std::shuffle(indices.begin(), indices.end(), gen3);
+                        // Consequently, the first element of indices is 1
+                        for (int i = 1; i < k_neighbors + 1; ++i) {
+                            neighbors_copy[i] = neighbors[indices[i]];
+                            distances_copy[i] = distances[indices[i]];
+                        }
+                        neighbors = neighbors_copy;
+                        distances = distances_copy;
 
-                    neighbors.resize(k_neighbors + 1);
-                    distances.resize(k_neighbors + 1);
+                        neighbors.resize(k_neighbors + 1);
+                        distances.resize(k_neighbors + 1);
+                    }
+ 
                     break;
                 }
             }
-            
+
         }
 
         return std::make_pair(neighbors, distances);
@@ -294,7 +304,7 @@
         }
         double mean_azimuth = std::atan2(sin_sum_azimuth / particles.size(), cos_sum_azimuth / particles.size());
         double mean_polar = std::atan2(sin_sum_polar / particles.size(), cos_sum_polar / particles.size());
-        
+
         // normalize to [0, 2pi] and [0, pi]
         if (mean_azimuth < 0) mean_azimuth += 2 * M_PI;
         if (mean_polar < 0) mean_polar += M_PI;
@@ -308,7 +318,7 @@
         double difference = 0.0;
 
         std::vector<double> lastFivePercent;
-        int fivePercent = timeLimit * 0.05;
+        int fivePercent = timeLimit * 0.20;
 
         while (timeLimit == -1 || timeStep < timeLimit) {
             update();  // perform a simulation step
@@ -342,7 +352,7 @@
 
     void SwarmModel::writeToFile(int timesteps, std::string filetype, int N, double L, double v, double r, Mode mode, int k, double noise, std::string model) {
         if (filetype == "xyz") {
-            std::string modus;   
+            std::string modus;
             if (mode == Mode::FIXED) {
                 modus = "kNeighbors";
             }

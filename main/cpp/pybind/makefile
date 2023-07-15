@@ -16,7 +16,7 @@ INCLUDE = $(shell python3 -m pybind11 --includes)
 SUFFIX_PYBIND = $(shell python3-config --extension-suffix)
 # Get all .cpp files from the directory above
 CPPS = $(wildcard ../*.cpp)
-# Exclude main.cpp and helperFunctions.cpp from the directory above
+# Exclude main.cpp from the directory above
 CPPS := $(filter-out ../main.cpp, $(CPPS))
 
 Solver$(SUFFIX_PYBIND): pybind_wrapper.cpp
