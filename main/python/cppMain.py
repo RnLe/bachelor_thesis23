@@ -14,7 +14,7 @@ if __name__ == "__main__":
     settings = {
         #                  N,      L,      v,      noise,  r
         "XXsmall": [       5,      4,      0.03,   0.1,    1],
-        "Xsmall": [        20,     6,      0.03,   0.1,    1],
+        "Xsmall": [        50,     6,      0.03,   0.1,    1],
         "small": [         200,    30,     0.03,   0.1,    3],
         "a": [             300,    7,      0.03,   2.0,    1],
         "b": [             300,    25,     0.03,   0.5,    1],
@@ -30,7 +30,12 @@ if __name__ == "__main__":
         "XXlargeR20": [    10000,  60,     0.03,   0.1,    20],
         "XXlargefast": [   10000,  60,     0.1,    0.1,    1],
         "XXXlarge": [      20000,  60,     0.03,   0.1,    1],
-        "Ultralarge": [    200000, 60,     0.03,   0.1,    1]
+        "Ultralarge": [    200000, 60,     0.03,   0.1,    1],
+        
+        "BaseNoiseAnalysis40": [       40,     3.1,    0.03,   0.1,    1],
+        "BaseNoiseAnalysis100": [      100,    5,      0.03,   0.1,    1],
+        "BaseNoiseAnalysis400": [      400,    10,     0.03,   0.1,    1],
+        "BaseNoiseAnalysis1600": [     1600,   20,     0.03,   0.1,    1]
     }
     
     # Choose between RADIUS, FIXED, QUANTILE, FIXEDRADIUS
@@ -43,7 +48,7 @@ if __name__ == "__main__":
     timesteps = 5000
 
     # Choose settings
-    chosen_settings = settings["small"]
+    chosen_settings = settings["Xsmall"]
     N       = chosen_settings[0]
     L       = chosen_settings[1]
     v       = chosen_settings[2]
@@ -52,7 +57,10 @@ if __name__ == "__main__":
     # Calculate exchange radius from density; (N / L^2) * r^2
     # Example for N = 5000, L = 60, r = 1;
     k       = (N * r * r) / (L * L)
-    k_neighbors = 5
+    k_neighbors = 2
+    
+    va_array = []
+    density_array = []
     
     # Create model
     model = VicsekModel(N, L, v, noise, r, mode, k_neighbors, ZDimension, seed=True)
@@ -163,7 +171,7 @@ if __name__ == "__main__":
     radioMode = RadioButtons(axMode, ('Radius', 'Fixed', 'FixedRadius'), active=0)
     radioGrid = RadioButtons(axGrid, ('Off', 'On', 'Dynamic', 'Count', 'Density'), active=0)
     radioDistances = RadioButtons(axDistances, ('Off', 'Lines', 'Lines+Text'), active=0)
-    radioPlots = RadioButtons(axPlots, ('Off', 'Va', 'Densities'), active=0)
+    radioPlots = RadioButtons(axPlots, ('Off', 'Va', 'Densities', 'All'), active=0)
     
     # On radioMode change, update mode
     radioMode.on_clicked(update_mode)
@@ -241,11 +249,38 @@ if __name__ == "__main__":
                             ax1.text(cell_x * (2 * model.r) + model.r, cell_y * (2 * model.r) + model.r, str(num_particles), horizontalalignment='center', verticalalignment='center', fontsize=8)
 
                         ax1.add_patch(cell)
+                        
+                # Add text for total cell count
+                ax1.text(0, -2, "Cells: " + str(model.num_cells * model.num_cells), fontsize=12, verticalalignment='top', horizontalalignment='left')
+            
+            # Add values to arrays
+            va_array.append(model.mean_direction2D())
+            density_array.append(model.density_weighted_order_parameter())
             
             if radioPlots.value_selected == 'Va':
                 # Label the average velocity from model.mean_direction2D()
-                ax1.text(0, L + 4, "Va: " + str(round(model.mean_direction2D(), 2)), fontsize=12, verticalalignment='top', horizontalalignment='left')
-
+                ax1.text(0, L + 4, "Va: " + str(round(va_array[-1], 2)), fontsize=12, verticalalignment='top', horizontalalignment='left')
+                # Plot the average velocity over time
+                ax2.clear()
+                ax2.plot(range(len(va_array)), va_array, label="Va")
+                ax2.legend()
+                ax2.set_xlim(0, timestep)
+            elif radioPlots.value_selected == 'Densities':
+                # Label the density from model.density_weighted_order_parameter()
+                ax1.text(0, L + 4, "Density: " + str(round(density_array[-1], 2)), fontsize=12, verticalalignment='top', horizontalalignment='left')
+                ax2.clear()
+                ax2.plot(range(len(density_array)), density_array, label="Density")
+                ax2.legend()
+                ax2.set_xlim(0, timestep)
+            elif radioPlots.value_selected == 'All':
+                # Label all order parameters
+                ax1.text(0, L + 4, "Va: " + str(round(va_array[-1], 2)), fontsize=12, verticalalignment='top', horizontalalignment='left')
+                ax1.text(0, L + 3, "Density: " + str(round(density_array[-1], 2)), fontsize=12, verticalalignment='top', horizontalalignment='left')
+                ax2.clear()
+                ax2.plot(range(len(va_array)), va_array, label="Va")
+                ax2.plot(range(len(density_array)), density_array, label="Density")
+                ax2.legend()
+                ax2.set_xlim(0, timestep)
             
 
     ani = animation.FuncAnimation(fig, update_animation, interval=30)

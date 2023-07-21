@@ -16,7 +16,7 @@
     // Constructors
     // :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
     SwarmModel::SwarmModel(int N, double L, double v, double noise, double r, Mode mode, int k_neighbors, bool ZDimension, bool seed)
-        : N(N), L(L), v(v), noise(noise), r(r), mode(mode), k_neighbors(k_neighbors), density3D(N / (L * L * L)), density2D(N / (L * L)), num_cells(int(L / (2 * r))),
+        : N(N), L(L), v(v), noise(noise), r(r), mode(mode), k_neighbors(k_neighbors), density3D(N / (L * L * L)), density2D(N / (L * L)), num_cells(int(ceil(L / (2 * r)))),
         seed(seed), ZDimension(ZDimension) {
 
         std::uniform_real_distribution<> dis_x(0, L);
@@ -119,7 +119,7 @@
     std::pair<std::vector<Particle*>, std::vector<double>> SwarmModel::get_neighbors(Particle& particle, int index) {
         // Case differentiation between radius and fixed number of neighbors
         // If fixed numbers is chosen, effectively let the while loop iterate over every cells (and abort if it has found k neighbors)
-        int rangeOfCells = floor(num_cells / 2.0);
+        int rangeOfCells = num_cells;
         if (mode == Mode::RADIUS || mode == Mode::FIXEDRADIUS) {
             // Cells are cubes with the side length of a radius. So we only want to iterate over a maximum of 2 cell shell around the radius.
             // Consider that the cell size increases with the radius
@@ -224,24 +224,27 @@
         neighbors.push_back(&particle);
         distances.push_back(0);
 
-        if (neighbors.size() > 2) {
-            // Instead of creating and sorting a vector of pairs, use the temporary vectors and push the elements back in the correct order
-            // Sort neighbors by distance
-            for (int i = 0; i < neighbors.size() - 1; ++i) {
-                for (int j = i + 1; j < neighbors.size(); ++j) {
-                    if (distances[i] > distances[j]) {
-                        std::swap(neighbors[i], neighbors[j]);
-                        std::swap(distances[i], distances[j]);
-                    }
-                }
-            }
+        if (neighbors.size() > 1) {
+            std::vector<std::pair<Particle*, double>> pairs;
+            for (int i = 0; i < neighbors.size(); ++i) pairs.push_back(std::make_pair(neighbors[i], distances[i]));
+            // std::sort(pairs.begin(), pairs.end(), [](auto& left, auto& right) { return left.second < right.second; });
+            // Rewrite this for use with std=c++11
+            std::sort(pairs.begin(), pairs.end(), [](std::pair<Particle*, double> left, std::pair<Particle*, double> right) { return left.second < right.second; });
 
+            neighbors.clear();
+            distances.clear();
+            for (auto& pair : pairs) {
+                neighbors.push_back(pair.first);
+                distances.push_back(pair.second);
+            }
             switch (mode) {
                 case Mode::FIXED: {
                     neighbors.resize(k_neighbors + 1);
                     break;
                 }
                 case Mode::RADIUS: {
+                    auto cut_off = std::find_if(distances.begin(), distances.end(), [](double value) { return value >= 1; });
+                    if (cut_off != distances.end()) neighbors.resize(std::distance(distances.begin(), cut_off));
                     break;
                 }
                 case Mode::FIXEDRADIUS: {
@@ -312,40 +315,226 @@
         return {mean_azimuth, mean_polar};
     }
 
-    std::pair<int, std::pair<double, double>> SwarmModel::mean_direction_watcher(int timeLimit, double tolerance) {
-        double previous2 = 0.0, previous1 = 0.0, current = 0.0;
+    // Density weighted order parameter
+    // \rho_r=\sum_{i<k}^N \vec{v}_i \vec{v}_k \frac{1}{\left|\vec{r}_i-\vec{r}_k\right|}=\sum_{k=0}^N \sum_{i=k+1}^N \vec{v}_i \vec{v}_k \frac{1}{\left|\vec{r}_i-\overrightarrow{r_k}\right|}
+    // =\sum_{k=0}^N \sum_{i=k+1}^N v_0^2 \cos \left(\varphi_i-\varphi_k\right) d_{i k}^{-1}
+    // Implementing the last equation
+    double SwarmModel::density_weighted_op() {
+        double order_parameter = 0.0;
+        double diff_sum = 0.0;
+        double temp_diff = 0.0;
+        for (int k = 0; k < particles.size(); ++k) {
+            for (int i = k + 1; i < particles.size(); ++i) {
+                temp_diff = std::hypot(particles[i].x - particles[k].x, particles[i].y - particles[k].y);
+                order_parameter += this->v * this->v * std::cos(particles[i].angle - particles[k].angle) / temp_diff;
+                diff_sum += 1 / temp_diff;
+            }
+        }
+        return order_parameter;
+    }
+
+    // This method is 2D for now
+    std::pair<int, std::pair<double, double>> SwarmModel::density_weighted_op_watcher(int timeLimit, double tolerance) {
+        // Hyperparameters
+
+        // Maximum number of steps to equilibrate
+        int maxEquilibrationSteps = timeLimit * 0.5;
+        // Minimum number of steps to average over after equilibration
+        int numberStepsAveraging = 40000;
+        // Relative tolerance for standard deviation
+        double relativeTolerance = 0.01;    // 1%
+        // Number of steps to average over for std and mean
+        int numberStepsStdMean = 1000;
+
+        // Variables
         int timeStep = 0;
-        double difference = 0.0;
+        double mean = 0.01;
+        double std = 0.01;
+        double last_std = 0.01;
+        double relative_diff = 0.01;
+        std::vector<double> mean_directions(timeLimit);
+        // This is a lot of memory, but it's the fastest way to do it. The memory is freed after the method is finished.
 
-        std::vector<double> lastFivePercent;
-        int fivePercent = timeLimit * 0.20;
+        // Count the number of consecutive times the relative difference is smaller than the tolerance
+        int consecutive = 0;
+        int consecutive_limit = 10;
 
-        while (timeLimit == -1 || timeStep < timeLimit) {
-            update();  // perform a simulation step
-            if (ZDimension) {
-                auto dir3D = mean_direction3D();
-                current = std::hypot(dir3D.first, dir3D.second);
-            } else {
-                current = mean_direction2D();
-            }
+        // In this loop, the model is equilibrated
+        // The model is considered equilibrated if the standard deviation of the last numberStepsStdMean steps is relatively the same
+        // compared to the standard deviation of the last numberStepsStdMean steps before that.
 
-            previous2 = previous1;
-            previous1 = current;
-            timeStep++;
+        while (timeStep < maxEquilibrationSteps) {
+            // Update the model
+            update();
+            mean_directions[timeStep] = density_weighted_op();
 
-            // Average over the last 5% of timesteps
-            if (timeStep > timeLimit - fivePercent) {
-                lastFivePercent.push_back(current);
-            }
+            // Calculate everything only every numberStepsStdMean steps
+            if (timeStep % numberStepsStdMean == 0 and timeStep > 0) {
+                // Calculate the new mean
+                // Consider to calculate the mean only for the last numberStepsStdMean steps
+                mean = std::accumulate(mean_directions.begin() + timeStep - numberStepsStdMean, mean_directions.begin() + mean_directions.size(), 0.0) / numberStepsStdMean;
+                // Calculate the new standard deviation
+                std = 0.0;
+                for (int i = 0; i < numberStepsStdMean; ++i) {
+                    std += std::pow(mean_directions[i] - mean, 2);
+                }
+                std /= numberStepsStdMean;
+                std = std::sqrt(std);
 
-            // Print progress and difference to the previous value
-            std::cout << "\033[1;32mEquilibrating: " << N << " particles at t = " << timeStep << ", va = " << current << "\033[0m\r";
+                // Check if the standard deviation is relatively the same
+                if (timeStep > numberStepsStdMean) {
+                    relative_diff = std::abs(std / last_std - 1);
+                    if (relative_diff < relativeTolerance) {
+                        last_std = std;
+                        ++consecutive;
+                        if (consecutive == consecutive_limit) {
+                            break;
+                        }
+                    }
+                    else {
+                        consecutive = 0;
+                    }
+                }
+                last_std = std;
+            // Print the progress
+            std::cout << std::fixed << std::setprecision(3) << "\033[1;32mEquilibrating: " << N << " particles at t = " << timeStep << ", rho = " << mean_directions[timeStep] << ", latest std: " << 
+            last_std << ", mean: " << mean << ", rel diff: " << relative_diff << "                               \033[0m\r";
             std::cout.flush();
+            }
+
+            
+            ++timeStep;
         }
 
-        // Calculate mean
-        double mean = std::accumulate(lastFivePercent.begin(), lastFivePercent.end(), 0.0) / lastFivePercent.size();
-        return std::make_pair(timeStep, std::make_pair(mean, previous2));
+        int equilibrationSteps = timeStep;
+        numberStepsAveraging = std::max(numberStepsAveraging, equilibrationSteps);
+
+        // After equilibration, the model is averaged over numberStepsAveraging steps
+        for (int i = 0; i < numberStepsAveraging; ++i) {
+            update();
+            mean_directions[++timeStep] = mean_direction2D();
+            // Print the progress every 1000 steps
+            if (timeStep % 1000 == 0) {
+                std::cout << std::fixed << std::setprecision(3) << "\033[1;32mAveraging: " << N << " particles at t = " << timeStep << ", va = " << mean_directions[timeStep] << "                                                                                \033[0m\r";
+                std::cout.flush();
+            }
+        }
+
+        // Calculate the mean for the last numberStepsAveraging steps
+        mean = std::accumulate(mean_directions.begin() + timeStep - numberStepsAveraging, mean_directions.begin() + mean_directions.size(), 0.0) / numberStepsAveraging;
+        // Print number of averaging steps
+        // std::cout << "Number of averaging steps: " << numberStepsAveraging << "                                                                                                        \n";
+
+        // Calculate the standard deviation for the last numberStepsAveraging steps
+        double sum_sq = 0.0;
+        for (int i = timeStep - numberStepsAveraging; i < timeStep; ++i) {
+            sum_sq += std::pow(mean_directions[i] - mean, 2);
+        }
+        sum_sq = std::sqrt(sum_sq / numberStepsAveraging);
+
+        return std::make_pair(timeStep, std::make_pair(mean, sum_sq));
+    }
+
+    // This method is 2D for now
+    std::pair<int, std::pair<double, double>> SwarmModel::mean_direction_watcher(int timeLimit, double tolerance) {
+        // Hyperparameters
+
+        // Maximum number of steps to equilibrate
+        int maxEquilibrationSteps = timeLimit * 0.5;
+        // Minimum number of steps to average over after equilibration
+        int numberStepsAveraging = 40000;
+        // Relative tolerance for standard deviation
+        double relativeTolerance = 0.01;    // 1%
+        // Number of steps to average over for std and mean
+        int numberStepsStdMean = 1000;
+
+        // Variables
+        int timeStep = 0;
+        double mean = 0.01;
+        double std = 0.01;
+        double last_std = 0.01;
+        double relative_diff = 0.01;
+        std::vector<double> mean_directions(timeLimit);
+        // This is a lot of memory, but it's the fastest way to do it. The memory is freed after the method is finished.
+
+        // Count the number of consecutive times the relative difference is smaller than the tolerance
+        int consecutive = 0;
+        int consecutive_limit = 10;
+
+        // In this loop, the model is equilibrated
+        // The model is considered equilibrated if the standard deviation of the last numberStepsStdMean steps is relatively the same
+        // compared to the standard deviation of the last numberStepsStdMean steps before that.
+
+        while (timeStep < maxEquilibrationSteps) {
+            // Update the model
+            update();
+            mean_directions[timeStep] = mean_direction2D();
+
+            // Calculate everything only every numberStepsStdMean steps
+            if (timeStep % numberStepsStdMean == 0 and timeStep > 0) {
+                // Calculate the new mean
+                // Consider to calculate the mean only for the last numberStepsStdMean steps
+                mean = std::accumulate(mean_directions.begin() + timeStep - numberStepsStdMean, mean_directions.begin() + mean_directions.size(), 0.0) / numberStepsStdMean;
+                // Calculate the new standard deviation
+                std = 0.0;
+                for (int i = 0; i < numberStepsStdMean; ++i) {
+                    std += std::pow(mean_directions[i] - mean, 2);
+                }
+                std /= numberStepsStdMean;
+                std = std::sqrt(std);
+
+                // Check if the standard deviation is relatively the same
+                if (timeStep > numberStepsStdMean) {
+                    relative_diff = std::abs(std / last_std - 1);
+                    if (relative_diff < relativeTolerance) {
+                        last_std = std;
+                        ++consecutive;
+                        if (consecutive == consecutive_limit) {
+                            break;
+                        }
+                    }
+                    else {
+                        consecutive = 0;
+                    }
+                }
+                last_std = std;
+            // Print the progress
+            std::cout << std::fixed << std::setprecision(3) << "\033[1;32mEquilibrating: " << N << " particles at t = " << timeStep << ", va = " << mean_directions[timeStep] << ", latest std: " << 
+            last_std << ", mean: " << mean << ", rel diff: " << relative_diff << "                               \033[0m\r";
+            std::cout.flush();
+            }
+
+            
+            ++timeStep;
+        }
+
+        int equilibrationSteps = timeStep;
+        numberStepsAveraging = std::max(numberStepsAveraging, equilibrationSteps);
+
+        // After equilibration, the model is averaged over numberStepsAveraging steps
+        for (int i = 0; i < numberStepsAveraging; ++i) {
+            update();
+            mean_directions[++timeStep] = mean_direction2D();
+            // Print the progress every 1000 steps
+            if (timeStep % 1000 == 0) {
+                std::cout << std::fixed << std::setprecision(3) << "\033[1;32mAveraging: " << N << " particles at t = " << timeStep << ", va = " << mean_directions[timeStep] << "                                                                                \033[0m\r";
+                std::cout.flush();
+            }
+        }
+
+        // Calculate the mean for the last numberStepsAveraging steps
+        mean = std::accumulate(mean_directions.begin() + timeStep - numberStepsAveraging, mean_directions.begin() + mean_directions.size(), 0.0) / numberStepsAveraging;
+        // Print number of averaging steps
+        // std::cout << "Number of averaging steps: " << numberStepsAveraging << "                                                                                                        \n";
+
+        // Calculate the standard deviation for the last numberStepsAveraging steps
+        double sum_sq = 0.0;
+        for (int i = timeStep - numberStepsAveraging; i < timeStep; ++i) {
+            sum_sq += std::pow(mean_directions[i] - mean, 2);
+        }
+        sum_sq = std::sqrt(sum_sq / numberStepsAveraging);
+
+        return std::make_pair(timeStep, std::make_pair(mean, sum_sq));
     }
 
 

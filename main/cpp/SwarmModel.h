@@ -27,6 +27,8 @@ public:
     virtual void                                            update                      () {};
     double                                                  mean_direction2D            ();
     std::pair<double, double>                               mean_direction3D            ();
+    double                                                  density_weighted_op();
+    std::pair<int, std::pair<double, double>>               density_weighted_op_watcher(int timeLimit = -1, double tolerance = 1e-6);
     std::pair<int, std::pair<double, double>>               mean_direction_watcher      (int timeLimit = -1, double tolerance = 1e-6);
     void                                                    writeToFile                 (int timesteps, std::string filetype, int N, double L, double v, double r,
                                                                                         Mode mode, int k, double noise, std::string model);

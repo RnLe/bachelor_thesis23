@@ -28,12 +28,17 @@ int main() {
         {"XXlargefast", {   10000,  60,     0.1,    0.1,    1}},
         {"XXXlarge", {      20000,  60,     0.03,   0.1,    1}},
         {"Ultralarge", {    200000, 60,     0.03,   0.1,    1}},
-        {"Coherence", {     400,    10,     0.03,   1.5,    1}}
+        {"Coherence", {     400,    10,     0.03,   1.5,    1}},
+
+        {"BaseNoiseAnalysis40", {       40,     3.1,    0.03,   0.1,    1}},
+        {"BaseNoiseAnalysis100", {      100,    5,      0.03,   0.1,    1}},
+        {"BaseNoiseAnalysis400", {      400,    10,     0.03,   0.1,    1}},
+        {"BaseNoiseAnalysis1600", {     1600,   20,     0.03,   0.1,    1}}
 
     };
 
     // Choose between RADIUS, FIXED and FIXEDRADIUS
-    Mode mode = Mode::FIXEDRADIUS;
+    Mode mode = Mode::RADIUS;
 
     // Flags
     bool ZDimension = false;     // 2D or 3D
@@ -63,8 +68,9 @@ int main() {
     // model.writeToFile(timesteps, "xyz", N, L, v, r, mode, k_neighbors, noise);
 
     Inspector inspector;
-    inspector.runForAllNoiseLevels_Fig2a(true, 150000);
+    // inspector.runForAllNoiseLevels_Fig2a(true, 150000);
     // inspector.runForAllNoiseLevelsAndModes_Fig2b(true, 20000);
+    inspector.runForAllNoiseLevels_density_weighted(true, 20000);
 
     return 0;
 }

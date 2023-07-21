@@ -19,6 +19,33 @@ std::vector<std::vector<Particle*>> NeuralSwarmModel::get_all_neighbors() {
     return all_neighbors;
 }
 
+// Method to collect the input data for the neural network, but just for one particle
+std::vector<Particle*> NeuralSwarmModel::get_neighbors_neural(int index) {
+    std::vector<Particle*> neighbors;
+    std::vector<double> distances;
+    std::tie(neighbors, distances) = get_neighbors(particles[index], index);
+    return neighbors;
+}
+
+std::vector<std::vector<double>> NeuralSwarmModel::get_all_angles() {
+    std::vector<std::vector<double>> all_angles;
+    for (int i = 0; i < particles.size(); i++) {
+        std::vector<double> angles(particles[i].k_neighbors.size());
+        angles = get_angles(i);
+        all_angles.push_back(angles);
+    }
+    return all_angles;
+}
+
+std::vector<double> NeuralSwarmModel::get_angles(int index) {
+    Particle& particle = particles[index];
+    std::vector<double> angles(particle.k_neighbors.size());
+    for (Particle* p : particle.k_neighbors) {
+        angles.push_back(p->angle);
+    }
+    return angles;
+}
+
 // Method to update the particles
 // Contains the new angles for the particles
 void NeuralSwarmModel::update_angles(std::vector<double> angles) {
@@ -27,6 +54,26 @@ void NeuralSwarmModel::update_angles(std::vector<double> angles) {
         // Update the angle of the particle
         particles[i].angle = angles[i];
     }
+}
+
+// Method to update the angle of one particle
+void NeuralSwarmModel::update_angle(int index, double angle) {
+    particles[index].angle = angle;
+}
+
+// Method to get the local order parameter for one particle
+double NeuralSwarmModel::get_local_order_parameter(int index) {
+    // Get the neighbors of the particle
+    std::vector<Particle*> neighbors = particles[index].k_neighbors;
+
+    // Calculate the average angle of the neighbors
+    double sin_sum = 0.0;
+    double cos_sum = 0.0;
+    for (const Particle* p : neighbors) {
+        sin_sum += std::sin(p->angle);
+        cos_sum += std::cos(p->angle);
+    }
+    return std::hypot(cos_sum / neighbors.size(), sin_sum / neighbors.size());
 }
 
 // Method to execute one timestep

@@ -72,6 +72,8 @@ PYBIND11_MODULE(Solver, m) {
         .def("get_neighbors", &SwarmModel::get_neighbors)
         .def("mean_direction2D", &SwarmModel::mean_direction2D)
         .def("mean_direction3D", &SwarmModel::mean_direction3D)
+        .def("density_weighted_op", &SwarmModel::density_weighted_order_parameter)
+        .def("density_weighted_op_watcher", &SwarmModel::density_weighted_order_parameter_watcher)
         .def("mean_direction_watcher", &SwarmModel::mean_direction_watcher)
         .def("writeToFile", &SwarmModel::writeToFile)
         .def_readwrite("N", &SwarmModel::N)
@@ -124,8 +126,10 @@ PYBIND11_MODULE(Solver, m) {
         .def(py::init<>())
         .def("runForAllNoiseLevels_Fig2a", &Inspector::runForAllNoiseLevels_Fig2a)
         .def("runForAllNoiseLevels_Fig2b", &Inspector::runForAllNoiseLevels_Fig2b)
+        .def("runForAllNoiseLevels_density_weighted", &Inspector::runForAllNoiseLevels_density_weighted)
         .def("equilibrate_va_VicsekValues_2a", &Inspector::equilibrate_va_VicsekValues_2a)
-        .def("equilibrate_va_VicsekValues_2b", &Inspector::equilibrate_va_VicsekValues_2b);
+        .def("equilibrate_va_VicsekValues_2b", &Inspector::equilibrate_va_VicsekValues_2b)
+        .def("equilibrate_density_weighted_op", &Inspector::equilibrate_density_weighted_op);
 
     // NeuralSwarmModel
     py::class_<NeuralSwarmModel, SwarmModel>(m, "NeuralSwarmModel")

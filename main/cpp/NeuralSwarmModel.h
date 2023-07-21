@@ -20,11 +20,20 @@ class NeuralSwarmModel : public SwarmModel {
         ~NeuralSwarmModel() = default;
 
         // Methods
-        // Collect the input data for the neural network
+        // Return all neighbors of all (or one) particle/s
         std::vector<std::vector<Particle*>> get_all_neighbors();
+        std::vector<Particle*> get_neighbors_neural(int index);
+
+        // Same as above, but returns an array of angles
+        std::vector<std::vector<double>> get_all_angles();
+        std::vector<double> get_angles(int index);
 
         // Update the angles of the particles
         void update_angles(std::vector<double> angles);
+        void update_angle(int index, double angle);
+
+        // Get local order parameter for one particle
+        double get_local_order_parameter(int index);
 
         // Execute one timestep
         void update() override;
