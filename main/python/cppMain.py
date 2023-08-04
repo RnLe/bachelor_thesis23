@@ -14,8 +14,8 @@ if __name__ == "__main__":
     settings = {
         #                  N,      L,      v,      noise,  r
         "XXsmall": [       5,      4,      0.03,   0.1,    1],
-        "Xsmall": [        50,     6,      0.03,   0.1,    1],
-        "small": [         200,    30,     0.03,   0.1,    3],
+        "Xsmall": [        50,     10,      0.03,   0.1,    1],
+        "small": [         200,    30,     0.03,   0.1,    1],
         "a": [             300,    7,      0.03,   2.0,    1],
         "b": [             300,    25,     0.03,   0.5,    1],
         "d": [             300,    5,      0.03,   0.1,    1],
@@ -129,21 +129,38 @@ if __name__ == "__main__":
         global buttonStartFlag
         global model
         model = VicsekModel(N, L, v, noise, r, mode, k_neighbors, ZDimension, seed=True)
+        # Clear arrays
+        va_array.clear()
+        density_array.clear()
         update_animation(0)
         buttonStartFlag = False
         buttonStart.label.set_text("Start")
+        
+    def buttonGhostPress(event):
+        global buttonGhostFlag
+        buttonGhostFlag = not buttonGhostFlag
+        
+        # Change button text
+        if buttonGhostFlag:
+            buttonGhost.label.set_text("Show")
+        else:
+            buttonGhost.label.set_text("Hide")
     
-    axStart = plt.axes([0.1, 0.75, 0.1, 0.04])
-    axReset = plt.axes([0.2, 0.75, 0.1, 0.04])
+    axStart = plt.axes([0.1, 0.75, 0.066, 0.04])
+    axGhost = plt.axes([0.166, 0.75, 0.066, 0.04])
+    axReset = plt.axes([0.232, 0.75, 0.068, 0.04])
 
     buttonStart = Button(axStart, 'Start', color=axcolor, hovercolor='0.975')
+    buttonGhost = Button(axGhost, 'Hide', color=axcolor, hovercolor='0.975')
     buttonReset = Button(axReset, 'Reset', color=axcolor, hovercolor='0.975')
 
     buttonStart.on_clicked(buttonStartPress)
+    buttonGhost.on_clicked(buttonGhostPress)
     buttonReset.on_clicked(buttonResetPress)
     
-     # Button flags
+    # Button flags
     buttonStartFlag = False
+    buttonGhostFlag = False
         
     # Create RadioButtons
     # Radiobuttons for
@@ -177,6 +194,16 @@ if __name__ == "__main__":
     radioMode.on_clicked(update_mode)
 
     def update_animation(timestep):
+        # If buttonGhostFlag is True, only update model and data, but don't draw anything
+        if buttonGhostFlag:
+            model.update()
+            va_array.append(model.mean_direction2D())
+            density_array.append(model.density_weighted_op())
+            ax1.clear()
+            # Label frame number (from len(va_array))
+            ax1.text(6, -2, "Frame: " + str(len(va_array)), fontsize=12, verticalalignment='top', horizontalalignment='left')
+            return
+        
         # If button is pressed, update animation
         if buttonStartFlag:
             # Delete all quivers and circles
@@ -255,7 +282,7 @@ if __name__ == "__main__":
             
             # Add values to arrays
             va_array.append(model.mean_direction2D())
-            density_array.append(model.density_weighted_order_parameter())
+            density_array.append(model.density_weighted_op())
             
             if radioPlots.value_selected == 'Va':
                 # Label the average velocity from model.mean_direction2D()
@@ -264,14 +291,14 @@ if __name__ == "__main__":
                 ax2.clear()
                 ax2.plot(range(len(va_array)), va_array, label="Va")
                 ax2.legend()
-                ax2.set_xlim(0, timestep)
+                ax2.set_xlim(0, len(va_array))
             elif radioPlots.value_selected == 'Densities':
-                # Label the density from model.density_weighted_order_parameter()
+                # Label the density from model.density_weighted_op()
                 ax1.text(0, L + 4, "Density: " + str(round(density_array[-1], 2)), fontsize=12, verticalalignment='top', horizontalalignment='left')
                 ax2.clear()
                 ax2.plot(range(len(density_array)), density_array, label="Density")
                 ax2.legend()
-                ax2.set_xlim(0, timestep)
+                ax2.set_xlim(0, len(va_array))
             elif radioPlots.value_selected == 'All':
                 # Label all order parameters
                 ax1.text(0, L + 4, "Va: " + str(round(va_array[-1], 2)), fontsize=12, verticalalignment='top', horizontalalignment='left')
@@ -280,7 +307,10 @@ if __name__ == "__main__":
                 ax2.plot(range(len(va_array)), va_array, label="Va")
                 ax2.plot(range(len(density_array)), density_array, label="Density")
                 ax2.legend()
-                ax2.set_xlim(0, timestep)
+                ax2.set_xlim(0, len(va_array))
+                
+            # Label frame number (from len(va_array))
+            ax1.text(6, -2, "Frame: " + str(len(va_array)), fontsize=12, verticalalignment='top', horizontalalignment='left')
             
 
     ani = animation.FuncAnimation(fig, update_animation, interval=30)

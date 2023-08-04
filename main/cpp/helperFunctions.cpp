@@ -3,6 +3,7 @@
 #include <cmath>
 #include <iostream>
 #include <iomanip>
+#include <fstream>
 
 std::vector<double> helperFunctions::linspace(double start, double end, std::size_t num) {
     std::vector<double> result(num);
@@ -46,4 +47,9 @@ std::string helperFunctions::format_float(float number) {
 
     str.erase(end, std::string::npos);
     return str;
+}
+
+bool helperFunctions::file_exists(const std::string& name) {
+    std::ifstream f(name.c_str());
+    return f.good();
 }

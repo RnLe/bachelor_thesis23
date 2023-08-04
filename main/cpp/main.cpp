@@ -70,7 +70,8 @@ int main() {
     Inspector inspector;
     // inspector.runForAllNoiseLevels_Fig2a(true, 150000);
     // inspector.runForAllNoiseLevelsAndModes_Fig2b(true, 20000);
-    inspector.runForAllNoiseLevels_density_weighted(true, 20000);
+    // inspector.runForAllMultipleInitialConditions_density_weighted(true, 20000, 5);
+    inspector.runForAllNoiseLevels(true);
 
     return 0;
 }

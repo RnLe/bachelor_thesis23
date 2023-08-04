@@ -126,5 +126,6 @@
     "cassert": "cpp"
   },
   "appMap.findingsEnabled": true,
-  "C_Cpp.errorSquiggles": "disabled"
+  "C_Cpp.errorSquiggles": "disabled",
+  "todo-tree.tree.scanMode": "workspace only"
 }

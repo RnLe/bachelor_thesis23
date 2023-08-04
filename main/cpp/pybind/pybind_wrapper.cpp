@@ -72,8 +72,8 @@ PYBIND11_MODULE(Solver, m) {
         .def("get_neighbors", &SwarmModel::get_neighbors)
         .def("mean_direction2D", &SwarmModel::mean_direction2D)
         .def("mean_direction3D", &SwarmModel::mean_direction3D)
-        .def("density_weighted_op", &SwarmModel::density_weighted_order_parameter)
-        .def("density_weighted_op_watcher", &SwarmModel::density_weighted_order_parameter_watcher)
+        .def("density_weighted_op", &SwarmModel::density_weighted_op)
+        .def("density_weighted_op_watcher", &SwarmModel::density_weighted_op_watcher)
         .def("mean_direction_watcher", &SwarmModel::mean_direction_watcher)
         .def("writeToFile", &SwarmModel::writeToFile)
         .def_readwrite("N", &SwarmModel::N)
@@ -137,7 +137,12 @@ PYBIND11_MODULE(Solver, m) {
                 py::arg("N"), py::arg("L"), py::arg("v"), py::arg("noise"), py::arg("r"), py::arg("mode"), py::arg("k_neighbors"), py::arg("ZDimension") = false, py::arg("seed") = false)
         .def("update", &NeuralSwarmModel::update)
         .def("get_all_neighbors", &NeuralSwarmModel::get_all_neighbors)
-        .def("update_angles", &NeuralSwarmModel::update_angles);
+        .def("get_neighbors_neural", &NeuralSwarmModel::get_neighbors_neural)
+        .def("get_all_angles", &NeuralSwarmModel::get_all_angles)
+        .def("get_angles", &NeuralSwarmModel::get_angles)
+        .def("update_angles", &NeuralSwarmModel::update_angles)
+        .def("update_angle", &NeuralSwarmModel::update_angle)
+        .def("get_local_order_parameter", &NeuralSwarmModel::get_local_order_parameter);
 
     // LCG
     py::class_<LCG>(m, "LCG")

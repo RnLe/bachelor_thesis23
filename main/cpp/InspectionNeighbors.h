@@ -30,14 +30,17 @@ public:
     // Wrapper for the densitiesVicsekValues() method
     void                                            runForAllNoiseLevelsAndModes_Fig2b             (bool writeToFile, int timesteps = 5000);
     void                                            runForAllNoiseLevelsAndModes_Fig2a             (bool writeToFile, int timesteps = 5000);
+    void                                            runForAllMultipleInitialConditions_density_weighted(bool writeToFile, int timesteps = 5000, int runs = 5);
     void                                            runForAllNoiseLevels_Fig2a                     (bool writeToFile, int timesteps = 5000);
-    void                                            runForAllNoiseLevels_density_weighted          (bool writeToFile, int timesteps = 5000);
+    void                                            runForAllNoiseLevels_density_weighted          (bool writeToFile, int timesteps = 5000, bool random = false);
     void                                            runForAllNoiseLevels_Fig2b                     (bool writeToFile, int timesteps = 5000);
+    void                                            runForAllNoiseLevels                           (bool writeToFile, int timesteps = 10000);
     // Function to check the order parameter
     void                                            equilibrate_va_VicsekValues_2a                 (bool writeToFile = false, std::string fileNamePrefix = "Fig2a", std::vector<double> noises = {});
     void                                            equilibrate_va_VicsekValues_2b                 (bool writeToFile = false, std::string fileNamePrefix = "Fig2a");
-    void                                            equilibrate_density_weighted_op                (bool writeToFile = false, std::string fileNamePrefix = "density_weighted_op", std::vector<double> noises = {});
+    void                                            equilibrate_density_weighted_op                (bool writeToFile = false, std::string fileNamePrefix = "density_weighted_op", std::vector<double> noises = {}, bool random = false);
 
+    void                                            writeSimulationFile                            (std::string fileName, std::vector<double> noises);
 private:
     bool                                            densityNeighbors, ZDimension, seed;
     int                                             N = 100, k_neighbors = 5, timesteps;
