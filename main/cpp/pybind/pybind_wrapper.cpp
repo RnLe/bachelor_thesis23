@@ -8,6 +8,7 @@
 #include "../PerceptronModel.h"
 #include "../InspectionNeighbors.h"
 #include "../NeuralSwarmModel.h"
+#include "../FlockingModel.h"
 
 // Automatic conversion headers
 #include <pybind11/stl.h>
@@ -150,4 +151,12 @@ PYBIND11_MODULE(Solver, m) {
                 py::arg("seed"), py::arg("a"), py::arg("c"), py::arg("m"))
         .def(   py::init<>())
         .def("random_f", &LCG::random_f);
+
+    // FlockingModel
+    py::class_<FlockingModel, SwarmModel>(m, "FlockingModel")
+        .def(   py::init<int, double, double, double, double, Mode, int, bool, bool>(),
+                py::arg("N"), py::arg("L"), py::arg("v"), py::arg("noise"), py::arg("r"), py::arg("mode"), py::arg("k_neighbors"), py::arg("ZDimension") = false, py::arg("seed") = false)
+        .def("update", &FlockingModel::update)
+        .def("get_new_particle_flocking", &FlockingModel::get_new_particle_flocking)
+        .def("writeToFile", &FlockingModel::writeToFile);
 }

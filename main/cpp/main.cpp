@@ -1,6 +1,7 @@
 #include "VicsekModel.h"
 #include "PerceptronModel.h"
 #include "InspectionNeighbors.h"
+#include "FlockingModel.h"
 
 #include <map>
 #include <vector>
@@ -38,14 +39,14 @@ int main() {
     };
 
     // Choose between RADIUS, FIXED and FIXEDRADIUS
-    Mode mode = Mode::RADIUS;
+    Mode mode = Mode::FIXEDRADIUS;
 
     // Flags
     bool ZDimension = false;     // 2D or 3D
     bool seed = true;            // Whether to use a seed for reproducability
 
     // Duration of simulation
-    int timesteps = 10000;
+    int timesteps = 50000;
 
     // Choose settings
     std::vector<double> chosen_settings = settings["small"];
@@ -60,18 +61,85 @@ int main() {
     int     k_neighbors = 5;
 
 
-    // Create model
-    // VicsekModel model(N, L, v, noise, r, static_cast<Mode>(mode), k_neighbors, ZDimension, seed);
-    // PerceptronModel model(N, L, v, noise, r, static_cast<Mode>(mode), k_neighbors, ZDimension, seed);
+    mode = Mode::RADIUS;
+
+    VicsekModel model(N, L, v, noise, r, static_cast<Mode>(mode), k_neighbors, ZDimension, seed);
+    model.writeToFile(timesteps, "xyz", N, L, v, r, mode, k_neighbors, noise);
+
+    // mode = Mode::FIXED;
+    // {
+    //     FlockingModel model(N, L, v, noise, r, static_cast<Mode>(mode), k_neighbors, ZDimension, seed, 1.0, 1.0);
+    //     model.writeToFileFlocking(timesteps, "xyz", N, L, v, r, mode, k_neighbors, noise, "Flocking");
+    // }
+    // {
+    //     FlockingModel model(N, L, v, noise, r, static_cast<Mode>(mode), k_neighbors, ZDimension, seed, 1.0, 0.8);
+    //     model.writeToFileFlocking(timesteps, "xyz", N, L, v, r, mode, k_neighbors, noise, "Flocking");
+    // }
+    // {
+    //     FlockingModel model(N, L, v, noise, r, static_cast<Mode>(mode), k_neighbors, ZDimension, seed, 1.0, 0.5);
+    //     model.writeToFileFlocking(timesteps, "xyz", N, L, v, r, mode, k_neighbors, noise, "Flocking");
+    // }
+    // {
+    //     FlockingModel model(N, L, v, noise, r, static_cast<Mode>(mode), k_neighbors, ZDimension, seed, 1.0, 0.1);
+    //     model.writeToFileFlocking(timesteps, "xyz", N, L, v, r, mode, k_neighbors, noise, "Flocking");
+    // }
+    // {
+    //     FlockingModel model(N, L, v, noise, r, static_cast<Mode>(mode), k_neighbors, ZDimension, seed, 1.0, 0.01);
+    //     model.writeToFileFlocking(timesteps, "xyz", N, L, v, r, mode, k_neighbors, noise, "Flocking");
+    // }
+
+    // mode = Mode::FIXEDRADIUS;
+    // {
+    //     FlockingModel model(N, L, v, noise, r, static_cast<Mode>(mode), k_neighbors, ZDimension, seed, 1.0, 1.0);
+    //     model.writeToFileFlocking(timesteps, "xyz", N, L, v, r, mode, k_neighbors, noise, "Flocking");
+    // }
+    // {
+    //     FlockingModel model(N, L, v, noise, r, static_cast<Mode>(mode), k_neighbors, ZDimension, seed, 1.0, 0.8);
+    //     model.writeToFileFlocking(timesteps, "xyz", N, L, v, r, mode, k_neighbors, noise, "Flocking");
+    // }
+    // {
+    //     FlockingModel model(N, L, v, noise, r, static_cast<Mode>(mode), k_neighbors, ZDimension, seed, 1.0, 0.5);
+    //     model.writeToFileFlocking(timesteps, "xyz", N, L, v, r, mode, k_neighbors, noise, "Flocking");
+    // }
+    // {
+    //     FlockingModel model(N, L, v, noise, r, static_cast<Mode>(mode), k_neighbors, ZDimension, seed, 1.0, 0.1);
+    //     model.writeToFileFlocking(timesteps, "xyz", N, L, v, r, mode, k_neighbors, noise, "Flocking");
+    // }
+    // {
+    //     FlockingModel model(N, L, v, noise, r, static_cast<Mode>(mode), k_neighbors, ZDimension, seed, 1.0, 0.01);
+    //     model.writeToFileFlocking(timesteps, "xyz", N, L, v, r, mode, k_neighbors, noise, "Flocking");
+    // }
+
+    mode = Mode::RADIUS;
+    {
+        FlockingModel model(N, L, v, noise, r, static_cast<Mode>(mode), k_neighbors, ZDimension, seed, 1.0, 1.0);
+        model.writeToFileFlocking(timesteps, "xyz", N, L, v, r, mode, k_neighbors, noise, "Flocking");
+    }
+    {
+        FlockingModel model(N, L, v, noise, r, static_cast<Mode>(mode), k_neighbors, ZDimension, seed, 1.0, 0.8);
+        model.writeToFileFlocking(timesteps, "xyz", N, L, v, r, mode, k_neighbors, noise, "Flocking");
+    }
+    {
+        FlockingModel model(N, L, v, noise, r, static_cast<Mode>(mode), k_neighbors, ZDimension, seed, 1.0, 0.5);
+        model.writeToFileFlocking(timesteps, "xyz", N, L, v, r, mode, k_neighbors, noise, "Flocking");
+    }
+    {
+        FlockingModel model(N, L, v, noise, r, static_cast<Mode>(mode), k_neighbors, ZDimension, seed, 1.0, 0.1);
+        model.writeToFileFlocking(timesteps, "xyz", N, L, v, r, mode, k_neighbors, noise, "Flocking");
+    }
+    {
+        FlockingModel model(N, L, v, noise, r, static_cast<Mode>(mode), k_neighbors, ZDimension, seed, 1.0, 0.01);
+        model.writeToFileFlocking(timesteps, "xyz", N, L, v, r, mode, k_neighbors, noise, "Flocking");
+    }
+
 
     // Write to file
-    // model.writeToFile(timesteps, "xyz", N, L, v, r, mode, k_neighbors, noise);
 
     Inspector inspector;
     // inspector.runForAllNoiseLevels_Fig2a(true, 150000);
     // inspector.runForAllNoiseLevelsAndModes_Fig2b(true, 20000);
     // inspector.runForAllMultipleInitialConditions_density_weighted(true, 20000, 5);
-    inspector.runForAllNoiseLevels(true);
+    // inspector.runForAllNoiseLevels(true);
 
     return 0;
 }

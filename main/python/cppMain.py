@@ -1,4 +1,4 @@
-from Solver import Particle, Perceptron, PerceptronModel, VicsekModel, NeuralNetwork, PerceptronMode, Mode
+from Solver import Particle, Perceptron, PerceptronModel, VicsekModel, NeuralNetwork, PerceptronMode, Mode, FlockingModel
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -39,7 +39,7 @@ if __name__ == "__main__":
     }
     
     # Choose between RADIUS, FIXED, QUANTILE, FIXEDRADIUS
-    mode = Mode.RADIUS
+    mode = Mode.FIXED
 
     # Flags
     ZDimension = False     # 2D or 3D
@@ -63,7 +63,7 @@ if __name__ == "__main__":
     density_array = []
     
     # Create model
-    model = VicsekModel(N, L, v, noise, r, mode, k_neighbors, ZDimension, seed=True)
+    model = FlockingModel(N, L, v, noise, r, mode, k_neighbors, ZDimension, seed=False)
     # model = PerceptronModel(N, L, v, noise, r, mode, k_neighbors, ZDimension, seed=True)
 
     # Write to file
@@ -128,7 +128,7 @@ if __name__ == "__main__":
     def buttonResetPress(event):
         global buttonStartFlag
         global model
-        model = VicsekModel(N, L, v, noise, r, mode, k_neighbors, ZDimension, seed=True)
+        model = FlockingModel(N, L, v, noise, r, mode, k_neighbors, ZDimension, seed=False)
         # Clear arrays
         va_array.clear()
         density_array.clear()

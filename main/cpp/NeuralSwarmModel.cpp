@@ -6,6 +6,7 @@
 #include <cmath>
 #include <random>
 #include <numeric>
+#include <iostream>
 
 // Method to collect the input data for the neural network
 std::vector<std::vector<Particle*>> NeuralSwarmModel::get_all_neighbors() {
@@ -38,6 +39,7 @@ std::vector<std::vector<double>> NeuralSwarmModel::get_all_angles() {
 }
 
 std::vector<double> NeuralSwarmModel::get_angles(int index) {
+    // Log
     // TODO: For the neural network, the angles should be relative to the particle
     Particle& particle = particles[index];
     // Determine the neighbors of the particle and save them in the particle
@@ -49,13 +51,20 @@ std::vector<double> NeuralSwarmModel::get_angles(int index) {
 
     // Loop over k neighbors and save the angles
     // If less neighbors than k, fill the rest with 0
+    // Also, make sure that the angles are positive (are 0 if negative)
     std::vector<double> angles(k_neighbors + 1);
     for (int i = 0; i < k_neighbors; i++) {
         if (i < neighbors.size()) {
             angles[i] = neighbors[i]->angle;
+            if (angles[i] < 0.) {
+                angles[i] += 2. * M_PI;
+            }
+            if (angles[i] > 2. * M_PI) {
+                angles[i] = 2. * M_PI;
+            }
         }
         else {
-            angles[i] = 0;
+            angles[i] = 0.0;
         }
     }
     return angles;

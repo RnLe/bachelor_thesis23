@@ -562,7 +562,7 @@
                 break;
             }
             std::string parameters = "t" + std::to_string(timesteps) + "_N" + std::to_string(N) + "_L" + helperFunctions::format_float(L) + "_v" + helperFunctions::format_float(v) + "_n" + helperFunctions::format_float(noise)
-            + radiusOrK + "_mode_" + modus + "_model_" + model+ "_" + (ZDimension ? "3D" : "2D");
+            + radiusOrK + "_mode_" + modus + "_model_" + model + "_" + (ZDimension ? "3D" : "2D");
             std::string filename = base + parameters + ".xyz";
             std::ofstream file(filename);
             for (int i = 0; i < timesteps; ++i) {
