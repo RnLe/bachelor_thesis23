@@ -8,6 +8,10 @@
 #include <cmath>
 #include <random>
 
+/*
+The flocking model hosts the flocking order parameter. Unlike the Vicsek model, where the order parameter is calculated by averaging over all particles, the flocking model takes into account the distances between particles.
+*/
+
 class FlockingModel : public SwarmModel {
 public:
                                                         FlockingModel               (int N, double L, double v, double noise, double r, Mode mode = Mode::RADIUS, int k_neighbors = 5, bool ZDimension = false, bool seed = true, double alpha = 1.0, double distance_bias = 1.0)

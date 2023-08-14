@@ -16,7 +16,8 @@
 void FlockingModel::update() {
     update_cells();
     // Make a deep copy of the particles vector
-    // This ensures that the order of the particles does not change while updating
+    // This ensures that the index order of the particles does not change while updating
+    // Also, this ensures that the particles are not updated while using them
     std::vector<Particle> new_particles = particles;
 
     // Loop over all particles
@@ -96,7 +97,7 @@ std::tuple<double, double, double, double, double> FlockingModel::get_new_partic
     double new_y = particle.y + v * sin(new_angle);
     double new_z = particle.z;
 
-    // If the particle is outside the box, move it to the other side
+    // If the particle is outside the box, move it to the other side (PBC)
     if (new_x < 0) {
         new_x += L;
     }
@@ -110,7 +111,7 @@ std::tuple<double, double, double, double, double> FlockingModel::get_new_partic
         new_y -= L;
     }
 
-    // Calculate the new polar angle of the particle
+    // Calculate the new polar angle of the particle (for 3D)
     double new_polarAngle = std::atan2(new_y - L / 2, new_x - L / 2);
 
     return std::make_tuple(new_x, new_y, new_z, new_angle, new_polarAngle);

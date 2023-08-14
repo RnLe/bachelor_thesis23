@@ -11,6 +11,17 @@
 enum class Mode {
     RADIUS, FIXED, QUANTILE, FIXEDRADIUS
 };
+
+/*
+Virtual base class for swarm models. Provides critical functionality which is universal between models.
+Critical components are: 
+    -   The update_cells() method, which updates the cells for the swarm model. This is used to speed up the neighbor search.
+    -   The get_neighbors() method, which returns the neighbors of a particle.
+    -   The virtual update() method, which updates the swarm model. 
+    -   The sweep() method, which sweeps the swarm model for a given number of timesteps.
+    -   The writeToFile() method, which writes the swarm model to a file. This is used to write the swarm model to a file.
+    -   Order parameter methods, which calculate the order parameter of the swarm model.
+*/
 class SwarmModel {
 public:
 
@@ -21,14 +32,17 @@ public:
 
     // Methods  
     void                                                    update_cells                ();
-    std::vector<double>                                     get_density_hist3D          ();
-    std::vector<double>                                     get_dynamic_radius          ();
+    std::vector<double>                                     get_density_hist3D          ();     // Not used
+    std::vector<double>                                     get_dynamic_radius          ();     // Not used
     std::pair<std::vector<Particle*>, std::vector<double>>  get_neighbors               (Particle& particle, int index);
     virtual void                                            update                      () {};
     double                                                  mean_direction2D            ();
     std::pair<double, double>                               mean_direction3D            ();
-    double                                                  density_weighted_op();
-    std::pair<int, std::pair<double, double>>               density_weighted_op_watcher(int timeLimit = -1, double tolerance = 1e-6);
+    double                                                  density_weighted_op         ();
+    // Watchers run a simulation and calculate/mean an order parameter, considering correlations between timesteps by measuring the OP only at each sweep.
+    // DEPRECATED: While these watchers work, it is way more efficient to write the simulations (pos, angles, ...) to a file (sweep by sweep)
+    // and then calculate the order parameters from the files. This is done using python notebooks.
+    std::pair<int, std::pair<double, double>>               density_weighted_op_watcher (int timeLimit = -1, double tolerance = 1e-6);
     std::pair<int, std::pair<double, double>>               mean_direction_watcher      (int timeLimit = -1, double tolerance = 1e-6);
     void                                                    sweep                       (int timesteps);
     void                                                    writeToFile                 (int timesteps, std::string filetype, int N, double L, double v, double r,

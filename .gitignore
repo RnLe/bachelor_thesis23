@@ -11,3 +11,6 @@ __pycache__/
 *.avi
 *.txt
 *.gif
+
+# Ignore all files in notebooks/results
+notebooks/results/*

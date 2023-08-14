@@ -39,7 +39,7 @@ if __name__ == "__main__":
     }
     
     # Choose between RADIUS, FIXED, QUANTILE, FIXEDRADIUS
-    mode = Mode.FIXED
+    mode = Mode.FIXEDRADIUS
 
     # Flags
     ZDimension = False     # 2D or 3D
@@ -48,7 +48,7 @@ if __name__ == "__main__":
     timesteps = 5000
 
     # Choose settings
-    chosen_settings = settings["Xsmall"]
+    chosen_settings = settings["small"]
     N       = chosen_settings[0]
     L       = chosen_settings[1]
     v       = chosen_settings[2]

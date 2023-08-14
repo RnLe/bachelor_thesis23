@@ -13,13 +13,8 @@
 // helperFunctions::
 
 /*
-This file is an aggregation of tests to determine the quality and behavior of the Vicsek Model,
-limiting the particles to see k neighbors instead of neighbors within a specific radius.
-
-The goal of this file is to produce data for visualization and comparison with the original Vicsek Model.
-The converging behavior is then used to make suitable predictions and adjustments to the neural network.
-
-For small systems, the  number of neighbors is reduced to 4.
+This class grew into a helper class to run and write mutliple simulations.
+It handles wide ranges of parameters, creates uniform file names (containing all relevant parameters) and writes the simulation data to files in the data/ folder.
 */
 
 class Inspector {

@@ -4,6 +4,10 @@
 #include <vector>
 #include <cmath>
 
+/*
+DEPRECATED: This class isn't used anymore. It was used to test the perceptron algorithm on the Vicsek model.
+*/
+
 enum class PerceptronMode {
     DotProduct
     // Add further modes if necessary

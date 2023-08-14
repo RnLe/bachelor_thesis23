@@ -61,6 +61,7 @@ int main() {
     int     k_neighbors = 5;
 
 
+    // Write individual simulations
     mode = Mode::RADIUS;
 
     VicsekModel model(N, L, v, noise, r, static_cast<Mode>(mode), k_neighbors, ZDimension, seed);
@@ -132,10 +133,9 @@ int main() {
         model.writeToFileFlocking(timesteps, "xyz", N, L, v, r, mode, k_neighbors, noise, "Flocking");
     }
 
+    // Inspector for multiple simulations
 
-    // Write to file
-
-    Inspector inspector;
+    // Inspector inspector;
     // inspector.runForAllNoiseLevels_Fig2a(true, 150000);
     // inspector.runForAllNoiseLevelsAndModes_Fig2b(true, 20000);
     // inspector.runForAllMultipleInitialConditions_density_weighted(true, 20000, 5);
