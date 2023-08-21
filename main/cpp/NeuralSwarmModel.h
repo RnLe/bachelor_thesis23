@@ -10,7 +10,9 @@
 #include <random>
 #include <numeric>
 
-// A class for use with Tensorflow in Python
+/*
+This class effectively creates an interface between the C++ simulation and the Python neural network.
+*/
 class NeuralSwarmModel : public SwarmModel {
     public:
         // Constructor

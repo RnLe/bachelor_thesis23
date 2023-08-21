@@ -1,0 +1,6 @@
+appmap_dir: tmp/appmap
+language: python
+name: bachelor_thesis23
+packages:
+- path: old
+- path: pybind11

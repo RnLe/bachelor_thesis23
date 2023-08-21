@@ -14,7 +14,7 @@ The flocking model hosts the flocking order parameter. Unlike the Vicsek model, 
 
 class FlockingModel : public SwarmModel {
 public:
-                                                        FlockingModel               (int N, double L, double v, double noise, double r, Mode mode = Mode::RADIUS, int k_neighbors = 5, bool ZDimension = false, bool seed = true, double alpha = 1.0, double distance_bias = 1.0)
+                                                        FlockingModel               (int N, double L, double v, double noise, double r,Mode mode = Mode::RADIUS, int k_neighbors = 5, bool ZDimension = false, bool seed = true, double alpha = 1.0, double distance_bias = 1.0)
                                                                                     : SwarmModel(N, L, v, noise, r, mode, k_neighbors, ZDimension, seed), distance_bias(distance_bias), alpha(alpha) {}
     virtual                                             ~FlockingModel              () = default;
 
