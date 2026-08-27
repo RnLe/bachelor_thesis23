@@ -12,5 +12,27 @@ __pycache__/
 *.txt
 *.gif
 
+# Curated README media is tracked despite the rules above
+!docs/media/*.gif
+!docs/media/*.mp4
+
 # Ignore all files in notebooks/results
 notebooks/results/*
+
+# Overleaf export archive (extracted to latex/thesis)
+BachelorThesis.zip
+
+# LaTeX build artifacts
+latex/thesis/main.pdf
+latex/manuscript/main.pdf
+latex/**/*.aux
+latex/**/*.bbl
+latex/**/*.bcf
+latex/**/*.blg
+latex/**/*.fdb_latexmk
+latex/**/*.fls
+latex/**/*.log
+latex/**/*.out
+latex/**/*.run.xml
+latex/**/*.toc
+latex/**/*.synctex.gz
